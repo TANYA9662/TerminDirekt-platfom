@@ -1,0 +1,87 @@
+cat create_complete_company.sh | tr -cd '\11\12\15\40-\176' > clean_script.sh
+mv clean_script.sh create_complete_company.sh
+chmod +x create_complete_company.sh
+echo "Logging in..."
+LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3001/api/users/login \
+-H "Content-Type: application/json" \
+-d '{
+  "email": "malena@example.com",
+  "password": "malena123"
+}')
+
+TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.token')
+
+if [[ "$TOKEN" == "null" ]]; then
+  echo "Login failed!"
+  exit 1
+fi
+
+echo "Token acquired."
+
+COMPANY_NAME="Moja Komplet Firma"
+
+# 1️⃣ Briši prethodne firme sa istim imenom
+echo "Deleting existing companies named '$COMPANY_NAME'..."
+EXISTING_COMPANIES=$(curl -s http://localhost:3001/api/companies | jq -r ".[] | select(.name==\"$COMPANY_NAME\") | .id")
+
+for ID in $EXISTING_COMPANIES; do
+  curl -s -X DELETE http://localhost:3001/api/companies/$ID \
+  -H "Authorization: Bearer $TOKEN"
+  echo "Deleted company with ID $ID"
+done
+
+# 2️⃣ Kreiraj novu firmu
+echo "Creating new company..."
+CREATE_RESPONSE=$(curl -s -X POST http://localhost:3001/api/companies \
+-H "Authorization: Bearer $TOKEN" \
+-H "Content-Type: application/json" \
+-d "{
+  \"name\": \"$COMPANY_NAME\",
+  \"city\": \"Beograd\",
+  \"description\": \"Opis firme za test\",
+  \"services\": [\"Frizer\", \"Kozmetika\", \"Manikir\", \"Pedikir\"]
+}")
+
+COMPANY_ID=$(echo $CREATE_RESPONSE | jq -r '.company.id')
+
+if [[ "$COMPANY_ID" == "null" ]]; then
+  echo "Company creation failed!"
+  echo $CREATE_RESPONSE
+  exit 1
+fi
+
+echo "Company created with ID: $COMPANY_ID"
+
+# 3️⃣ Upload slika
+echo "Uploading images..."
+FILES=(~/Desktop/frizer.jpg ~/Desktop/kozmetika.jpg ~/Desktop/manikir.jpg ~/Desktop/pedikir.jpg)
+
+for FILE in "${FILES[@]}"; do
+  if [[ -f "$FILE" ]]; then
+    curl -s -X POST http://localhost:3001/api/companies/$COMPANY_ID/images \
+    -H "Authorization: Bearer $TOKEN" \
+    -F "images=@$FILE"
+    echo "Uploaded $FILE"
+  else
+    echo "File not found: $FILE"
+  fi
+done
+
+# 4️⃣ Ažuriraj firmu
+echo "Updating company..."
+curl -s -X PUT http://localhost:3001/api/companies/$COMPANY_ID \
+-H "Authorization: Bearer $TOKEN" \
+-H "Content-Type: application/json" \
+-d '{
+  "city": "Novi Beograd",
+  "phone": "011/987-654"
+}'
+
+echo "Company updated."
+
+# 5️⃣ Fetch kompletne informacije
+echo "Fetching company details..."
+curl -s http://localhost:3001/api/companies/$COMPANY_ID \
+-H "Authorization: Bearer $TOKEN" | jq
+
+echo "Done."
