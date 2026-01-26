@@ -1,115 +1,125 @@
 import pool from '../db/pool.js';
 
-// ✔ CREATE BOOKING
-export const createBooking = async ({
-  user_id,
-  company_id,
-  service,
-  slot_time,        // koristi slot_time umesto start_time i end_time
-  status = 'pending'
-}) => {
-  const userId = parseInt(user_id);
-  const companyId = parseInt(company_id);
+// CREATE BOOKING
+export const createBooking = async ({ user_id, company_id, service, slot_id, status = 'pending' }) => {
+  const client = await pool.connect();
 
-  if (isNaN(userId) || isNaN(companyId)) {
-    throw new Error('Nevažeći ID');
+  try {
+    await client.query('BEGIN');
+
+    // Zaključaj slot
+    const slotRes = await client.query('SELECT is_booked FROM slots WHERE id=$1 FOR UPDATE', [slot_id]);
+    if (slotRes.rowCount === 0) throw new Error('Slot ne postoji');
+    if (slotRes.rows[0].is_booked) throw new Error('Termin je već zauzet');
+
+    // Kreiraj booking
+    const bookingRes = await client.query(
+      `INSERT INTO bookings (user_id, company_id, service, slot_id, status)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [user_id, company_id, service, slot_id, status]
+    );
+
+    // Obeleži slot kao zauzet
+    await client.query('UPDATE slots SET is_booked = true WHERE id=$1', [slot_id]);
+
+    await client.query('COMMIT');
+    return bookingRes.rows[0];
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
-
-  const res = await pool.query(
-    `INSERT INTO bookings (user_id, company_id, service, slot_time, status)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING *`,
-    [userId, companyId, service, slot_time, status]
-  );
-  return res.rows[0];
 };
 
-// ✔ GET BOOKINGS FOR USER
+// GET BOOKINGS FOR USER
 export const getBookingsByUser = async (userId) => {
-  const res = await pool.query(`
-    SELECT
-      b.id,
-      b.service,
-      b.slot_time,
-      b.status
-    FROM bookings b
-    WHERE b.user_id = $1
-    ORDER BY b.slot_time DESC
-  `, [userId]);
-
-  return res.rows;
-};
-
-// ✔ GET BOOKING BY ID
-export const getByCompanyId = async (companyId) => {
-  const res = await pool.query(`
-    SELECT b.id, b.service, b.slot_time, b.status, u.email AS user_email
-    FROM bookings b
-    JOIN users u ON u.id = b.user_id
-    WHERE b.company_id = $1
-    ORDER BY b.slot_time DESC
-  `, [companyId]);
-
-  return res.rows;
-};
-
-
-
-
-// ✔ GET COMPANY BY USER
-export const getCompanyByUser = async (userId) => {
-  const id = parseInt(userId);
-  if (isNaN(id)) throw new Error('Nevažeći ID korisnika');
-
   const res = await pool.query(
-    "SELECT * FROM companies WHERE user_id = $1",
-    [id]
+    `SELECT b.id, b.service, b.status, s.id AS slot_id, s.start_time, s.end_time
+     FROM bookings b
+     JOIN slots s ON b.slot_id = s.id
+     WHERE b.user_id = $1
+     ORDER BY s.start_time DESC`,
+    [userId]
+  );
+  return res.rows;
+};
+
+// GET BOOKINGS BY COMPANY
+export const getByCompanyId = async (companyId) => {
+  const res = await pool.query(
+    `SELECT b.id, b.service, b.status, s.id AS slot_id, s.start_time, s.end_time,
+            u.email AS user_email
+     FROM bookings b
+     JOIN slots s ON b.slot_id = s.id
+     JOIN users u ON u.id = b.user_id
+     WHERE b.company_id = $1
+     ORDER BY s.start_time DESC`,
+    [companyId]
+  );
+  return res.rows;
+};
+
+// GET BOOKING BY ID
+export const getBookingById = async (bookingId) => {
+  const res = await pool.query(
+    `SELECT b.id, b.service, b.status, s.id AS slot_id, s.start_time, s.end_time,
+            c.name AS company_name, u.email AS user_email
+     FROM bookings b
+     JOIN slots s ON b.slot_id = s.id
+     JOIN companies c ON b.company_id = c.id
+     JOIN users u ON b.user_id = u.id
+     WHERE b.id = $1`,
+    [bookingId]
   );
   return res.rows[0] || null;
 };
 
-// ✔ GET BOOKINGS BY PROVIDER
-export const getBookingsByProvider = async (provider_id) => {
-  const provId = parseInt(provider_id);
-  if (isNaN(provId)) throw new Error('Nevažeći ID providera');
-
-  const res = await pool.query(
-    `SELECT * FROM bookings 
-     WHERE provider_id = $1
-     ORDER BY slot_time ASC`,
-    [provId]
-  );
-  return res.rows;
-};
-
-
-// ✔ GET ALL BOOKINGS (admin)
-export const getAllBookings = async () => {
-  const res = await pool.query(
-    `SELECT * FROM bookings ORDER BY slot_time DESC`
-  );
-  return res.rows;
-};
-
-// ✔ UPDATE BOOKING STATUS
+// UPDATE BOOKING STATUS
 export const updateBookingStatus = async (booking_id, status) => {
-  const id = parseInt(booking_id);
-  if (isNaN(id)) throw new Error('Nevažeći ID rezervacije');
-
   const res = await pool.query(
-    `UPDATE bookings 
-     SET status = $1 
-     WHERE id = $2 
-     RETURNING *`,
-    [status, id]
+    `UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,
+    [status, booking_id]
   );
   return res.rows[0];
 };
 
-// ✔ DELETE BOOKING
+// DELETE BOOKING
 export const deleteBooking = async (booking_id) => {
-  const id = parseInt(booking_id);
-  if (isNaN(id)) throw new Error('Nevažeći ID rezervacije');
+  const client = await pool.connect();
 
-  await pool.query(`DELETE FROM bookings WHERE id = $1`, [id]);
+  try {
+    await client.query('BEGIN');
+
+    const bookingRes = await client.query('SELECT slot_id FROM bookings WHERE id=$1 FOR UPDATE', [booking_id]);
+    if (!bookingRes.rows.length) throw new Error('Rezervacija ne postoji');
+
+    const slotId = bookingRes.rows[0].slot_id;
+
+    await client.query('DELETE FROM bookings WHERE id=$1', [booking_id]);
+
+    if (slotId) {
+      await client.query('UPDATE slots SET is_booked=false WHERE id=$1', [slotId]);
+    }
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+// GET ALL BOOKINGS (ADMIN)
+export const getAllBookings = async () => {
+  const res = await pool.query(
+    `SELECT b.id, b.service, b.status, s.id AS slot_id, s.start_time, s.end_time
+     FROM bookings b
+     JOIN slots s ON b.slot_id = s.id
+     ORDER BY s.start_time DESC`
+  );
+  return res.rows;
 };

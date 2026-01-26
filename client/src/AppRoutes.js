@@ -1,11 +1,14 @@
 import React, { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
+import { CompanyContext } from "./context/CompanyContext";
 
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import CompanyDashboard from "./pages/CompanyDashboard";
 import Login from "./components/auth/Login";
+import ResetPasswordRequest from "./components/auth/ResetPasswordRequest";
+import ResetPassword from "./components/auth/ResetPassword";
 import Register from "./components/auth/Register";
 
 import OnboardingLayout from "./components/onboarding/OnboardingLayout";
@@ -16,9 +19,10 @@ import OnboardingGuard from "./components/auth/OnboardingGuard";
 
 export default function AppRoutes() {
   const { user, loading } = useContext(AuthContext);
+  const { companyComplete: contextComplete, status } = useContext(CompanyContext);
 
-  // ⏳ čekamo auth + company
-  if (loading) {
+  // ⏳ Čekamo da se učitaju auth i company podaci
+  if (loading || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-xl font-semibold">Učitavanje...</p>
@@ -26,13 +30,15 @@ export default function AppRoutes() {
     );
   }
 
-  // 🚫 Neregistrovan korisnik
+  // 🚫 Guest (neregistrovan)
   if (!user) {
     return (
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/reset-password-request" element={<ResetPasswordRequest />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -40,7 +46,7 @@ export default function AppRoutes() {
 
   // 🏢 Firma
   if (user.role === "company") {
-    const companyComplete =
+    const oldCompanyComplete =
       user.company &&
       user.company.name?.trim() &&
       user.company.description?.trim() &&
@@ -49,9 +55,12 @@ export default function AppRoutes() {
       Array.isArray(user.company.services) &&
       user.company.services.length > 0;
 
+    const finalCompanyComplete = oldCompanyComplete || contextComplete;
+
     return (
       <Routes>
-        {!companyComplete && (
+        {/* Onboarding za nove firme */}
+        {!finalCompanyComplete && (
           <Route path="/onboarding/*" element={<OnboardingGuard />}>
             <Route element={<OnboardingLayout />}>
               <Route path="company" element={<CompanyStep />} />
@@ -61,15 +70,17 @@ export default function AppRoutes() {
           </Route>
         )}
 
-        {companyComplete && (
+        {/* Dashboard za kompletne firme */}
+        {finalCompanyComplete && (
           <Route path="/company-dashboard" element={<CompanyDashboard />} />
         )}
 
+        {/* Fallback route */}
         <Route
           path="*"
           element={
             <Navigate
-              to={companyComplete ? "/company-dashboard" : "/onboarding/company"}
+              to={finalCompanyComplete ? "/company-dashboard" : "/onboarding/company"}
               replace
             />
           }
@@ -81,8 +92,9 @@ export default function AppRoutes() {
   // 👤 Obični korisnik
   return (
     <Routes>
+      <Route path="/" element={<Home />} />
       <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

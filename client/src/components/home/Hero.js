@@ -3,105 +3,76 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { CompanyContext } from "../../context/CompanyContext";
 
-const Hero = ({ search = "", setSearch = () => { }, city = "", setCity = () => { }, cities = [] }) => {
+const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useContext(AuthContext);
-  const { status, companyComplete } = useContext(CompanyContext);
+  const { loading: authLoading } = useContext(AuthContext);
+  const { status } = useContext(CompanyContext);
 
-  const handleAccountClick = () => {
-    if (!user) return navigate("/login");
-    if (user.role === "company") {
-      if (companyComplete) navigate("/company-dashboard");
-      else navigate("/onboarding/company");
-    } else {
-      navigate("/");
-    }
-  };
-
-  const handleSearch = () => {
-    const query = search.trim();
-    if (query || city) {
-      navigate(`/companies?search=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}`);
-    }
-  };
-
-  // ⚠️ Blokiraj UI dok se učitava auth ili company
   if (authLoading || status === "loading") {
     return (
-      <section className="min-h-screen flex items-center justify-center">
-        <p className="text-xl font-semibold">Učitavanje...</p>
+      <section className="min-h-[40vh] sm:min-h-[50vh] lg:min-h-[45vh] flex items-center justify-center bg-gray-100 ">
+        <p className="text-xl font-semibold text-textDark">Učitavanje...</p>
       </section>
     );
   }
 
   return (
-    <section className="bg-gray-400 min-h-screen text-white py-16">
-      <div className="animate-fadeInUp p-8 max-w-3xl mx-auto text-center">
-        <h1 className="text-4xl font-bold mb-4">Zakažite termin online</h1>
-        <p className="text-white/80 mb-6">
-          Frizeri, kozmetički saloni i wellness u vašem gradu
-        </p>
+    <section className="relative w-full flex flex-col items-center justify-center bg-gray-100 py-12 sm:py-16 md:pb-20 ">
+      <div
+        className="w-full relative overflow-hidden"
+        style={{
+          backgroundImage: "url('/uploads/companies/pozadina.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          height: "40vh", // više vertikalno, slika je viša
+          minHeight: "400px",
+        }}
+      >
+        {/* Tamni overlay */}
+        <div className="absolute inset-0 bg-black/40" />
 
-        <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
-          {!user ? (
-            <>
-              <button
-                onClick={() => navigate("/register")}
-                className="bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition"
-              >
-                Registrujte firmu
-              </button>
-              <button
-                onClick={() => navigate("/login")}
-                className="bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition"
-              >
-                Prijavi se
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleAccountClick}
-              disabled={status === "loading"}
-              className={`bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition ${status === "loading" ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+        {/* Sadržaj hero sekcije - pozicioniran bliže donjem delu */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 sm:px-12 flex flex-col justify-end items-center text-center h-full gap-60 pb-12">
+
+          {/* Naslov */}
+          <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg mb-4">
+            Zakažite termin online
+          </h1>
+
+          {/* Search polja */}
+          <div className="flex flex-col sm:flex-row justify-center gap-2 w-full max-w-3xl">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && onSearch()}
+              placeholder="Pretraži firme ili usluge..."
+              className="flex-1 px-4 py-2 rounded-lg bg-white/10 text-white font-bold placeholder:text-white/60 focus:ring-2 focus:ring-white transition"
+            />
+            <select
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="w-full sm:w-1/3 px-4 py-2 rounded-lg bg-white/10 text-white font-bold focus:ring-2 focus:ring-white transition"
             >
-              {user.role === "company"
-                ? companyComplete
-                  ? "Dashboard firme"
-                  : "Moja firma"
-                : "Moj nalog"}
+              <option value="">Sve lokacije</option>
+              {cities.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={onSearch}
+              className="w-full sm:w-1/3 px-4 py-2 rounded-lg bg-white/10 text-white font-bold hover:bg-white/20 transition"
+            >
+              Pretraži
             </button>
-          )}
-        </div>
-
-        <div className="flex flex-col sm:flex-row justify-center gap-2">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Pretraži firme ili usluge..."
-            className="w-full sm:w-2/3 border border-red-600 px-4 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-600 bg-black text-white placeholder-white"
-          />
-          <select
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            className="w-full sm:w-1/3 border border-red-600 px-4 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-red-600 bg-black text-white"
-          >
-            <option value="">Sve lokacije</option>
-            {cities.length > 0
-              ? cities.map((c) => <option key={c} value={c}>{c}</option>)
-              : <option disabled>Nema dostupnih gradova</option>}
-          </select>
-          <button
-            onClick={handleSearch}
-            className="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition"
-          >
-            Pretraži
-          </button>
+          </div>
         </div>
       </div>
+
     </section>
+
   );
 };
 

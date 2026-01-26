@@ -8,17 +8,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#2563eb",       // plava, za akcije i dugmad
-        primaryHover: "#1d4ed8",  // hover za plavu
-        secondary: "#0f172a",     // tamna pozadina
-        secondaryLight: "#1e293b",// svetlija tamna
-        accent: "#ef4444",        // crvena akcija (brisanje)
-        accentLight: "#f87171",   // svetlija crvena
-        muted: "#f1f5f9",         // svetlo-siva pozadina
-        gray400: "#9ca3af",       // Tailwind gray-400 override
-        gray500: "#6b7280",       // Tailwind gray-500 override
-        black: "#000000",
-        white: "#ffffff",
+        primary: "#4F46E5",
+        primaryHover: "#4338CA",
+        secondary: "#F3F4F6",
+        secondaryDark: "#374151",
+        accent: "#EF4444",
+        accentLight: "#F87171",
+        muted: "#9CA3AF",
+        textDark: "#111827",
+        textLight: "#374151",
+        cardBg: "#FFFFFF",
       },
       keyframes: {
         fadeInUp: {

@@ -1,121 +1,184 @@
-import React, { useState, useEffect, useContext } from "react";
-import API, { setAuthToken } from "../api";
+import React, { useEffect, useState, useContext } from "react";
+import API from "../api";
 import Hero from "../components/home/Hero";
 import CompanyCard from "../components/home/CompanyCard";
-import AdvancedSlider from "../components/home/AdvancedSlider";
-import BookingModal from "../components/company/BookingModal";
+import BookingModal from "../components/modals/BookingModal";
 import { AuthContext } from "../context/AuthContext";
+import { getImageUrl } from "../utils/imageUtils";
+import { useNavigate } from "react-router-dom";
 
-const allowedCategories = [
-  "Frizer", "Barber", "Kozmetika", "Masaža",
-  "Spa", "Wellness", "Fitness", "Zdravlje", "Usluge"
-];
+const normalizeCity = (value) => value?.trim().toLowerCase();
+
+// Normalizacija firmi
+const normalizeCompanies = (data) => {
+  return (data || []).map((company) => {
+    let services = [];
+    if (Array.isArray(company.services)) services = company.services;
+    else if (typeof company.services === "string") {
+      try { services = JSON.parse(company.services); } catch { services = []; }
+    }
+
+    const slots = Array.isArray(company.slots)
+      ? company.slots.map(slot => ({
+        ...slot,
+        service_id: Number(slot.service_id),
+        start_time: slot.start_time,
+        end_time: slot.end_time || null,
+        is_booked: slot.is_booked || false,
+      }))
+      : [];
+
+    const images = Array.isArray(company.images) && company.images.length > 0
+      ? company.images.map(img => ({ ...img, url: getImageUrl(img) }))
+      : [{ image_path: "default.png", url: getImageUrl({ image_path: "default.png" }) }];
+
+    return { ...company, services, slots, images };
+  });
+};
 
 const Home = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [city, setCity] = useState("");
   const [companies, setCompanies] = useState([]);
   const [cities, setCities] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
-  const [slots, setSlots] = useState([]);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) setAuthToken(token);
-  }, []);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const res = await API.get("/companies");
+        // Guest i običan korisnik: fetch bez tokena
+        delete API.defaults.headers.common["Authorization"];
 
-        const filtered = res.data.filter(c =>
-          allowedCategories.includes(c.category)
-        );
+        const { data } = await API.get("/companies/user-view");
+        const normalized = normalizeCompanies(data);
 
-        setCompanies(filtered);
-
-        const uniqueCities = [
-          ...new Set(filtered.map(c => c.city).filter(Boolean))
-        ];
-        setCities(uniqueCities);
-
+        setCompanies(normalized);
+        setCities([...new Set(normalized.map(c => c.city).filter(Boolean))]);
       } catch (err) {
-        console.error("Greška pri učitavanju firmi:", err);
+        console.error(err);
+        setCompanies([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchCompanies();
-  }, []);
+  }, [user]);
 
-  const handleBook = async (company) => {
-    if (!user) {
-      alert("Morate biti prijavljeni.");
-      return;
-    }
+  const filteredCompanies = companies.filter((c) => {
+    const query = search.trim().toLowerCase();
+    const matchesName = c.name?.toLowerCase().includes(query);
+    const matchesService = Array.isArray(c.services) && c.services.some((s) =>
+      (s.name || s.title || "").toLowerCase().includes(query)
+    );
+    const matchesCity = city ? normalizeCity(c.city) === normalizeCity(city) : true;
+    return (matchesName || matchesService || !query) && matchesCity;
+  });
 
+  const handleBooking = async ({ service, slotId }) => {
     try {
-      setSelectedCompany(company);
-      const res = await API.get(`/slots/company/${company.id}`);
-      setSlots(res.data.filter(s => !s.is_booked));
+      const token = localStorage.getItem("token"); // token iz localStorage
+      if (!token) {
+        alert("Morate biti ulogovani da biste zakazali termin");
+        return;
+      }
+
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+
+      await API.post("/bookings", {
+        companyId: selectedCompany.id,
+        service,
+        slotId,
+      }, config);
+
+      alert("Termin uspešno zakazan!");
+      setSelectedCompany(null);
+      navigate("/dashboard");
     } catch (err) {
       console.error(err);
-      setSlots([]);
+      alert("Greška pri zakazivanju termina");
     }
   };
 
-  const filteredCompanies = companies.filter(c =>
-    c.name?.toLowerCase().includes(search.toLowerCase()) &&
-    (city ? c.city?.toLowerCase() === city.toLowerCase() : true)
-  );
+
+  if (loading)
+    return (
+      <div className="flex justify-center items-center min-h-screen text-gray-900 bg-gray-300">
+        Učitavanje...
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-gray-500 text-white">
-      {/* Hero section */}
+    <div className="min-h-screen bg-gray-100 text-textDark">
       <Hero
         search={search}
         setSearch={setSearch}
         city={city}
         setCity={setCity}
         cities={cities}
-        className="bg-gray-400 text-white"
       />
 
-      {/* Slider */}
-      <AdvancedSlider companies={companies.slice(0, 5)} className="bg-gray-400 text-white" />
-
-      {/* Companies grid */}
-      <div className="max-w-7xl mx-auto px-6 mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredCompanies.length ? (
-          filteredCompanies.map(c => (
-            <CompanyCard
-              key={c.id}
-              company={c}
-              onBook={handleBook}
-              cardClass="bg-gray-400 text-white"
-              buttonClass="bg-red-600 text-white hover:bg-red-700"
-            />
-          ))
-        ) : (
-          <p className="col-span-full text-center text-gray-100">
-            Nema firmi za prikaz
-          </p>
-        )}
+      <div className="max-w-7xl mx-auto px-4 -mt-16 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+          {filteredCompanies.length > 0 ? (
+            filteredCompanies.map((company) => (
+              <CompanyCard
+                key={company.id}
+                company={company}
+                onBook={() => {
+                  if (!user) {
+                    // Guest -> odmah otvoriti login prompt
+                    setSelectedCompany({ ...company, guestBooking: true });
+                  } else if (user.role !== "user") {
+                    // Firma -> ne može da bookuje
+                    alert("Samo obični korisnici mogu da rezervišu termine");
+                  } else {
+                    // Obični korisnik -> booking modal
+                    setSelectedCompany(company);
+                  }
+                }}
+              />
+            ))
+          ) : (
+            <p className="col-span-full text-center text-gray-400">
+              Nema firmi za prikaz
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Booking modal */}
-      {selectedCompany && (
+      {selectedCompany && user && user.role === "user" ? (
         <BookingModal
           company={selectedCompany}
-          services={selectedCompany.services || []}
-          slots={slots}
           onClose={() => setSelectedCompany(null)}
-          modalClass="bg-gray-400 text-white"
-          buttonClass="bg-red-600 text-white hover:bg-red-700"
+          onSubmit={handleBooking}
         />
-      )}
+      ) : selectedCompany && (!user || selectedCompany.guestBooking) ? (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
+          <div className="bg-white p-6 rounded-xl">
+            <p className="mb-4">Molimo ulogujte se da biste rezervisali termin.</p>
+            <button
+              onClick={() => navigate("/login")}
+              className="bg-accent px-4 py-2 rounded-lg text-white"
+            >
+              Ulogujte se
+            </button>
+            <button
+              onClick={() => setSelectedCompany(null)}
+              className="ml-2 px-4 py-2 rounded-lg bg-gray-300"
+            >
+              Otkaži
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

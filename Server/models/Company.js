@@ -73,5 +73,5 @@ export const getAllCompanies = async ({ search = '', category = '', city = '', l
     params
   );
 
-  return res;
+  return res.rows; // 🔑 vraća samo niz kompanija
 };

@@ -21,11 +21,21 @@ export const getMyBookings = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const bookings = await Booking.getBookingsByUser(userId);
-    res.json(bookings);
+    const r = await pool.query(
+      `SELECT b.id, b.service, s.id AS slot_id, s.start_time, s.end_time,
+              c.name AS company_name, c.city
+       FROM bookings b
+       JOIN slots s ON b.slot_id = s.id
+       JOIN companies c ON b.company_id = c.id
+       WHERE b.user_id = $1
+       ORDER BY s.start_time ASC`,
+      [userId]
+    );
+
+    res.json(r.rows);
   } catch (err) {
-    console.error("Greška getMyBookings:", err);
-    res.status(500).json({ message: 'Greška pri učitavanju rezervacija' });
+    console.error("Greška pri dohvaćanju rezervacija:", err);
+    res.status(500).json({ message: "Greška pri dohvaćanju rezervacija", error: err.message });
   }
 };
 
@@ -36,16 +46,24 @@ export const getMyCompanyBookings = async (req, res) => {
     if (req.user.role !== 'company' && req.user.role !== 'admin')
       return res.status(403).json({ message: 'Forbidden' });
 
-    // Dohvati firmu ulogovanog korisnika iz baze
     const userId = req.user.id;
     const compRes = await pool.query('SELECT id FROM companies WHERE user_id=$1', [userId]);
-
     if (!compRes.rows.length) return res.status(404).json({ message: "Firma nije pronađena" });
 
     const companyId = compRes.rows[0].id;
 
-    const bookings = await Booking.getByCompanyId(companyId);
-    res.json(bookings);
+    const r = await pool.query(
+      `SELECT b.id, b.service, s.id AS slot_id, s.start_time, s.end_time,
+              c.name AS company_name, c.city
+       FROM bookings b
+       JOIN slots s ON b.slot_id = s.id
+       JOIN companies c ON b.company_id = c.id
+       WHERE b.company_id=$1
+       ORDER BY s.start_time ASC`,
+      [companyId]
+    );
+
+    res.json(r.rows);
   } catch (err) {
     console.error("Greška getMyCompanyBookings:", err);
     res.status(500).json({ message: "Greška pri učitavanju rezervacija firme" });
@@ -59,15 +77,25 @@ export const getBookingById = async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: 'Nevažeći ID rezervacije' });
 
-    const booking = await Booking.getBookingById(id);
-    if (!booking) return res.status(404).json({ message: 'Rezervacija nije pronađena' });
+    const r = await pool.query(
+      `SELECT b.id, b.user_id, b.service, s.id AS slot_id, s.start_time, s.end_time,
+              c.name AS company_name, c.city
+       FROM bookings b
+       JOIN slots s ON b.slot_id = s.id
+       JOIN companies c ON b.company_id = c.id
+       WHERE b.id=$1`,
+      [id]
+    );
+
+    if (!r.rows.length) return res.status(404).json({ message: 'Rezervacija nije pronađena' });
+
+    const booking = r.rows[0];
 
     // Samo vlasnik ili admin može videti
-    if (
-      req.user.role !== 'admin' &&
-      booking.user_id !== req.user.id &&
-      booking.company_id !== (await getCompanyId(req.user.id))
-    ) {
+    const companyId = await getCompanyId(req.user.id);
+    if (req.user.role !== 'admin' &&
+      booking.company_id !== companyId &&
+      booking.user_id !== req.user.id) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
@@ -81,26 +109,73 @@ export const getBookingById = async (req, res) => {
 // ====================== CREATE ======================
 // POST /api/bookings
 export const createBooking = async (req, res) => {
+  const client = await pool.connect();
+
   try {
-    const { company_id, service, start_time, end_time } = req.body;
-    const user_id = req.user.id;
+    await client.query('BEGIN');
 
-    if (!company_id || !service || !start_time || !end_time)
-      return res.status(400).json({ message: "Nedostaju obavezna polja." });
+    const userId = req.user.id;
+    const { companyId, service, slotId } = req.body;
 
-    const newBooking = await Booking.createBooking({
-      user_id,
-      company_id,
-      service,
-      start_time,
-      end_time,
-      status: "zakazano"
-    });
+    if (!companyId || !service || !slotId) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: "companyId, service i slotId su obavezni" });
+    }
 
-    res.status(201).json(newBooking);
+    // 1️⃣ Provera da li firma postoji
+    const companyRes = await client.query('SELECT * FROM companies WHERE id=$1', [companyId]);
+    if (!companyRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: "Firma nije pronađena" });
+    }
+
+    const company = companyRes.rows[0];
+
+    // 2️⃣ Provera da li firma ima ovu uslugu
+    let services = company.services;
+    if (typeof services === 'string') services = JSON.parse(services);
+    const serviceExists = services.find((s) => s.name === service);
+    if (!serviceExists) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: "Ne postoji ta usluga kod firme" });
+    }
+
+    // 3️⃣ Zaključaj slot i proveri da li je slobodan
+    const slotRes = await client.query(
+      'SELECT is_booked FROM slots WHERE id=$1 FOR UPDATE',
+      [slotId]
+    );
+
+    if (slotRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: "Slot ne postoji" });
+    }
+
+    if (slotRes.rows[0].is_booked) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: "Termin je već zauzet" });
+    }
+
+    // 4️⃣ Kreiranje booking-a
+    const bookingRes = await client.query(
+      `INSERT INTO bookings (user_id, company_id, service, slot_id, status)
+       VALUES ($1,$2,$3,$4,'pending')
+       RETURNING *`,
+      [userId, companyId, service, slotId]
+    );
+
+    // 5️⃣ Obeleži slot kao zauzet
+    await client.query('UPDATE slots SET is_booked = true WHERE id=$1', [slotId]);
+
+    await client.query('COMMIT');
+    res.status(201).json(bookingRes.rows[0]);
+
   } catch (err) {
-    console.error("Greška createBooking:", err);
-    res.status(500).json({ message: 'Greška prilikom kreiranja rezervacije' });
+    await client.query('ROLLBACK');
+    console.error("Greška pri kreiranju rezervacije:", err);
+    res.status(500).json({ message: "Greška pri kreiranju rezervacije", error: err.message });
+  } finally {
+    client.release();
   }
 };
 
@@ -133,22 +208,51 @@ export const updateBookingStatus = async (req, res) => {
 // ====================== DELETE ======================
 // DELETE /api/bookings/:id
 export const deleteBooking = async (req, res) => {
+  const client = await pool.connect();
+
   try {
+    await client.query('BEGIN');
+
     const bookingId = parseInt(req.params.id);
-    if (isNaN(bookingId)) return res.status(400).json({ message: 'Nevažeći ID rezervacije' });
+    if (isNaN(bookingId)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'Nevažeći ID rezervacije' });
+    }
 
-    const booking = await Booking.getBookingById(bookingId);
-    if (!booking) return res.status(404).json({ message: 'Rezervacija nije pronađena' });
+    const bookingRes = await client.query(
+      'SELECT slot_id, company_id FROM bookings WHERE id=$1 FOR UPDATE',
+      [bookingId]
+    );
 
+    if (bookingRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Rezervacija nije pronađena' });
+    }
+
+    const booking = bookingRes.rows[0];
+
+    // Provera prava (admin ili firma)
     const companyId = await getCompanyId(req.user.id);
-    if (req.user.role !== 'admin' && booking.company_id !== companyId)
+    if (req.user.role !== 'admin' && booking.company_id !== companyId) {
+      await client.query('ROLLBACK');
       return res.status(403).json({ message: 'Forbidden' });
+    }
 
-    await Booking.deleteBooking(bookingId);
+    // DELETE booking
+    await client.query('DELETE FROM bookings WHERE id=$1', [bookingId]);
+
+    // Oslobodi slot
+    await client.query('UPDATE slots SET is_booked = false WHERE id=$1', [booking.slot_id]);
+
+    await client.query('COMMIT');
     res.json({ message: 'Rezervacija obrisana' });
+
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error("Greška deleteBooking:", err);
-    res.status(500).json({ message: 'Greška prilikom brisanja rezervacije' });
+    res.status(500).json({ message: 'Greška prilikom brisanja rezervacije', error: err.message });
+  } finally {
+    client.release();
   }
 };
 

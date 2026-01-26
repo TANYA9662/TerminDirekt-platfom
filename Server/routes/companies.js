@@ -6,50 +6,30 @@ import upload from "../middlewares/uploadMiddleware.js";
 const router = express.Router();
 
 /* ===== PUBLIC ===== */
-router.get("/", companyController.getAllCompanies);
-router.get("/user/:id", companyController.getCompanyByUser);
-router.get("/user/:id/details", authenticateToken, companyController.getCompanyWithDetails);
-router.get("/:id/images", companyController.getCompanyImages);
+router.get("/withDetails", authenticateToken, companyController.getAllCompaniesWithDetails); // auth only
+router.get("/", companyController.getAllCompanies); // lista firmi, guest-friendly
+router.get("/user-view", companyController.getAllCompaniesForUsers); // guest može da vidi
+router.get("/user/:id", companyController.getCompanyByUser); // guest može da vidi
+router.get("/:id/images", companyController.getCompanyImages); // guest može da vidi
+router.get("/:id/slots", authenticateToken, companyController.getCompanySlots); // auth only
+router.get("/user/:id/details", companyController.getCompanyByUserWithDetails); // guest-friendly
 
-/* ===== AUTHENTICATED ===== */
+
+
+/* ===== AUTH ===== */
 router.get("/me", authenticateToken, companyController.getMyCompany);
 
-// UPSERT (create/update) company
-router.post(
-  "/",
-  authenticateToken,
-  requireRole("company"),
-  upload.array("images", 10),
-  companyController.upsertCompany
-);
+router.post("/", authenticateToken, requireRole("company"), upload.array("images", 10), companyController.upsertCompany);
+router.post("/:id/images", authenticateToken, requireOwnerOrAdmin, upload.array("images", 10), companyController.uploadCompanyImages);
 
-// Upload company images
-router.post(
-  "/:id/images",
-  authenticateToken,
-  requireOwnerOrAdmin,
-  upload.array("images", 10),
-  companyController.uploadCompanyImages
-);
-
-// Update company info
 router.put("/:id", authenticateToken, requireOwnerOrAdmin, companyController.updateCompany);
+router.put("/:id/services", authenticateToken, requireOwnerOrAdmin, companyController.updateCompanyServices);
+router.put("/:id/slots", authenticateToken, requireOwnerOrAdmin, companyController.saveSlotsHandler);
 
-// Update company services with prices
-router.put(
-  "/:id/services",
-  authenticateToken,
-  requireOwnerOrAdmin,
-  companyController.updateCompanyServices
-);
-
-// Delete company
 router.delete("/:id", authenticateToken, requireOwnerOrAdmin, companyController.deleteCompany);
-
-// Delete company image
 router.delete("/images/:imageId", authenticateToken, requireOwnerOrAdmin, companyController.deleteCompanyImage);
+router.delete("/:id/slots/:slotId", authenticateToken, requireOwnerOrAdmin, companyController.deleteSlot);
 
-// Search companies
 router.get("/search", companyController.searchCompanies);
 
 export default router;

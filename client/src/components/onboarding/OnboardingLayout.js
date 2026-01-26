@@ -1,7 +1,7 @@
 import React, { useContext, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import ProgressBar from "./ProgressBar";
 import { CompanyContext } from "../../context/CompanyContext";
+import ProgressBar from "./ProgressBar";
 
 const steps = ["company", "images", "services"];
 
@@ -10,38 +10,45 @@ export default function OnboardingLayout() {
   const navigate = useNavigate();
   const { company, status, companyComplete } = useContext(CompanyContext);
 
-  // 🔒 ZAKLJUČAVANJE ONBOARDINGA
+  // 🔒 Zaključavanje onboarding-a ako je firma završila
   useEffect(() => {
     if (status !== "ready") return;
-
     if (companyComplete && location.pathname.startsWith("/onboarding")) {
       navigate("/company-dashboard", { replace: true });
     }
   }, [companyComplete, status, location.pathname, navigate]);
 
+  // Ako se još učitava ili company nije postavljen, prikaži loading
   if (status === "loading" || !company) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gray-500">
+      <div className="min-h-screen flex items-center justify-center text-white bg-gray-200">
         Učitavanje...
       </div>
     );
   }
 
-  // Progress bar logika
-  const { name = "", description = "", images = [], services = [] } = company;
+  // Sigurno uzmi vrednosti iz company (fallback na prazne vrednosti)
+  const nameSafe = company?.name ?? "";
+  const descriptionSafe = company?.description ?? "";
+  const imagesSafe = Array.isArray(company?.images) ? company.images : [];
+  const servicesSafe = Array.isArray(company?.services) ? company.services : [];
+
+  // Odredi trenutni step onboarding-a
   let currentStepIndex = 0;
-  if (!name.trim() || !description.trim()) currentStepIndex = 0;
-  else if (images.length === 0) currentStepIndex = 1;
-  else if (services.length === 0) currentStepIndex = 2;
+  if (!nameSafe.trim() || !descriptionSafe.trim()) currentStepIndex = 0;
+  else if (imagesSafe.length === 0) currentStepIndex = 1;
+  else if (servicesSafe.length === 0) currentStepIndex = 2;
 
   return (
-    <div className="min-h-screen bg-gray-500 text-white flex flex-col items-center p-6">
+    <div className="min-h-screen bg-gray-200 flex flex-col items-center p-6">
       <div className="max-w-3xl w-full space-y-6">
-        <h2 className="text-2xl font-bold text-center">Dobrodošli u TerminDirekt</h2>
+        <h2 className="text-2xl font-bold text-center text-gray-800">
+          Dobrodošli u TerminDirekt
+        </h2>
 
         <ProgressBar currentStep={currentStepIndex + 1} steps={steps} />
 
-        <div className="p-6 bg-gray-400 rounded-2xl shadow">
+        <div className="p-6 bg-gray-300 rounded-2xl shadow-lg">
           <Outlet context={{ currentStepIndex, steps }} />
         </div>
       </div>

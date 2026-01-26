@@ -34,8 +34,8 @@ export default function CompanyStep() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-500 text-white p-6 flex flex-col justify-center max-w-md mx-auto space-y-4 rounded-lg">
-      <h3 className="text-xl font-semibold">Informacije o kompaniji</h3>
+    <div className="min-h-screen bg-gray-200 p-6 flex flex-col justify-center max-w-md mx-auto space-y-4 rounded-2xl shadow">
+      <h3 className="text-xl font-semibold text-gray-800">Informacije o kompaniji</h3>
       {error && <div className="text-red-600">{error}</div>}
 
       <input
@@ -43,39 +43,38 @@ export default function CompanyStep() {
         placeholder="Naziv kompanije"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full p-2 border border-gray-400 rounded bg-gray-400 text-white focus:outline-none"
+        className="w-full px-4 py-2 rounded-lg bg-gray-200 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-600"
         disabled={loading}
       />
+
       <textarea
         placeholder="Opis kompanije"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="w-full p-2 border border-gray-400 rounded bg-gray-400 text-white focus:outline-none"
+        className="w-full px-4 py-2 rounded-lg bg-gray-200 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-600"
         disabled={loading}
         rows={4}
       />
+
       <input
         type="text"
         placeholder="Grad"
         value={city}
         onChange={(e) => setCity(e.target.value)}
-        className="w-full p-2 border border-gray-400 rounded bg-gray-400 text-white focus:outline-none"
+        className="w-full px-4 py-2 rounded-lg bg-gray-200 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-600"
         disabled={loading}
       />
 
-      <div className="flex justify-between mt-4">
-        <div /> {/* Nema Back dugmeta na prvom step-u */}
+      <div className="flex justify-end mt-4">
         <button
           onClick={handleNext}
           disabled={loading}
-          className={`px-4 py-2 rounded text-white transition ${loading
-            ? "bg-gray-600 cursor-not-allowed"
-            : "bg-red-600 hover:bg-red-700"
-            }`}
+          className={`px-4 py-2 rounded-lg text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
         >
           {loading ? "Čuvanje..." : "Dalje"}
         </button>
       </div>
     </div>
+
   );
 }

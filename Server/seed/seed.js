@@ -68,8 +68,8 @@ const seed = async () => {
 
     // 5️⃣ Slots
     const slotsData = [
-      { provider_id: providers[0].id, start_time: '2025-11-12 10:00', end_time: '2025-11-12 11:00', is_booked: false },
-      { provider_id: providers[1].id, start_time: '2025-11-12 12:00', end_time: '2025-11-12 13:00', is_booked: false },
+      { provider_id: providers[0].id, service_id: services[0].id, start_time: '2025-11-12 10:00', end_time: '2025-11-12 11:00', is_booked: false },
+      { provider_id: providers[1].id, service_id: services[1].id, start_time: '2025-11-12 12:00', end_time: '2025-11-12 13:00', is_booked: false },
     ];
 
     const slots = [];
@@ -77,6 +77,8 @@ const seed = async () => {
       const slot = await Slot.createSlot(s);
       slots.push(slot);
     }
+
+
 
     // 6️⃣ Bookings
     await Booking.createBooking({ user_id: malena.id, slot_id: slots[0].id, service: 'Frizerski termin', status: 'confirmed' });

@@ -8,10 +8,12 @@ const router = express.Router();
 router.get('/me', authenticateToken, bookingController.getMyBookings);
 router.get('/company/me', authenticateToken, bookingController.getMyCompanyBookings);
 
+/* ===== CREATE BOOKING ===== */
+router.post('/', authenticateToken, bookingController.createBooking);
+
 /* ===== ADMIN / PUBLIC ===== */
 router.get('/', authenticateToken, bookingController.getAllBookings);
 router.get('/:id', authenticateToken, bookingController.getBookingById);
-router.post('/', authenticateToken, bookingController.createBooking);
 router.put('/:id', authenticateToken, bookingController.updateBookingStatus);
 router.delete('/:id', authenticateToken, bookingController.deleteBooking);
 

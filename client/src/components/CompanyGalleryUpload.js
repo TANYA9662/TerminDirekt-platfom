@@ -38,7 +38,6 @@ const CompanyGalleryUpload = ({ companyId, onUpdateImages }) => {
 
     try {
       await API.post(`/companies/${companyId}/images`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       setFiles([]);
@@ -72,29 +71,24 @@ const CompanyGalleryUpload = ({ companyId, onUpdateImages }) => {
       {previews.length > 0 && (
         <div className="grid grid-cols-3 gap-2 mb-2">
           {previews.map((p, i) => (
-            <img key={i} src={p} alt="" className="h-24 object-cover rounded" />
+            <img key={i} src={p} alt="" className="h-24 object-cover rounded-2xl" />
           ))}
         </div>
       )}
 
       <div className="flex gap-2">
-        <input type="file" multiple accept="image/*" onChange={handleFileChange} />
-        <button onClick={handleUpload} className="bg-primary text-white px-3 py-1 rounded">
+        <input type="file" multiple accept="image/*" onChange={handleFileChange} className="rounded-lg bg-gray-200 px-2 py-1" />
+        <button onClick={handleUpload} className="bg-accent text-white px-3 py-1 rounded-xl hover:bg-accentLight transition">
           Upload
         </button>
       </div>
-
       <div className="grid grid-cols-3 gap-2 mt-3">
         {gallery.map(img => (
-          <div key={img.id} className="relative">
-            <img
-              src={`http://localhost:3001${img.image_path}`}
-              alt=""
-              className="h-24 w-full object-cover rounded"
-            />
+          <div key={img.id} className="relative rounded-2xl overflow-hidden">
+            <img src={`http://localhost:3001${img.image_path}`} alt="" className="h-24 w-full object-cover rounded-2xl" />
             <button
               onClick={() => handleDelete(img.id)}
-              className="absolute top-1 right-1 bg-red-600 text-white px-2 text-xs rounded"
+              className="absolute top-1 right-1 bg-red-600 text-white px-2 text-xs rounded hover:bg-red-700 transition"
             >
               X
             </button>

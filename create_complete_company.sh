@@ -43,7 +43,7 @@ CREATE_RESPONSE=$(curl -s -X POST http://localhost:3001/api/companies \
     "name": "Moja Komplet Firma",
     "city": "Beograd",
     "description": "Opis firme za test",
-    "services": ["Frizer","Kozmetika","Manikir","Pedikir"]
+    "services": ["Frizer","Kozmetika","","Pedikir"]
   }')
 
 COMPANY_ID=$(echo "$CREATE_RESPONSE" | jq -r '.company.id')

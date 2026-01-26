@@ -36,8 +36,6 @@ const CompanyDetail = () => {
       if (imgsRes.status === "fulfilled") setImages(imgsRes.value.data || []);
       if (svcRes.status === "fulfilled") setServices(svcRes.value.data || []);
       if (revRes.status === "fulfilled") setReviews(revRes.value.data || []);
-    } catch (err) {
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -45,49 +43,60 @@ const CompanyDetail = () => {
 
   const handleBookingCreated = () => {
     setBookingOpen(false);
-    alert("Rezervacija poslana!");
     navigate("/dashboard");
   };
 
-  const prevImage = () => setCarouselIndex((prev) => (prev - 1 + images.length) % images.length);
-  const nextImage = () => setCarouselIndex((prev) => (prev + 1) % images.length);
+  const prevImage = () =>
+    setCarouselIndex((p) => (p - 1 + images.length) % images.length);
+  const nextImage = () =>
+    setCarouselIndex((p) => (p + 1) % images.length);
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto p-6 animate-pulse space-y-4 bg-gray-500 text-white min-h-screen">
-        <div className="h-64 bg-gray-400 rounded-lg"></div>
-        <div className="h-6 bg-gray-400 rounded w-1/2"></div>
-        <div className="h-4 bg-gray-400 rounded w-1/3"></div>
-        <div className="h-32 bg-gray-400 rounded-lg"></div>
+      <div className="min-h-screen bg-gray-100 p-6 max-w-6xl mx-auto animate-pulse space-y-4">
+        <div className="h-64 bg-gray-300 rounded-2xl" />
+        <div className="h-6 bg-gray-300 rounded w-1/2" />
+        <div className="h-4 bg-gray-300 rounded w-1/3" />
       </div>
     );
   }
 
-  if (!company)
+  if (!company) {
     return (
-      <div className="p-8 text-center text-white bg-gray-500 min-h-screen">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center text-textDark">
         Firma nije pronađena.
       </div>
     );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-500 text-white p-6 max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-100 p-6 max-w-6xl mx-auto space-y-6">
       <CompanyImages
         images={images}
         carouselIndex={carouselIndex}
         prevImage={prevImage}
         nextImage={nextImage}
         companyName={company.name}
+        className="rounded-2xl shadow-md bg-gray-200"
       />
-      <HeroCompany company={company} onBookingClick={() => setBookingOpen(true)} />
 
-      <div className="bg-gray-400 p-6 rounded-lg shadow space-y-6">
+      <HeroCompany
+        company={company}
+        onBookingClick={() => setBookingOpen(true)}
+      />
+
+      <div className="bg-gray-200 p-6 rounded-2xl shadow space-y-6">
         <div>
-          <h2 className="text-xl font-semibold mb-3">Usluge i cene</h2>
+          <h2 className="text-xl font-semibold mb-3 text-textDark">
+            Usluge i cene
+          </h2>
           <ServiceList services={services} />
         </div>
+
         <div>
-          <h2 className="text-xl font-semibold mb-3">Recenzije</h2>
+          <h2 className="text-xl font-semibold mb-3 text-textDark">
+            Recenzije
+          </h2>
           <Reviews reviews={reviews} companyId={id} onNewReview={fetchAll} />
         </div>
       </div>

@@ -1,305 +1,308 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { CompanyContext } from "../context/CompanyContext";
 import CompanyImageUpload from "../components/company/CompanyImageUpload";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { getImageUrl } from "../utils/imageUtils";
+
 import API from "../api";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+
 const CompanyDashboard = () => {
-  const { company, updateCompany } = useContext(CompanyContext);
+  const { company, updateCompany, updateCompanyServices, updateCompanySlots, setCompanyImages } = useContext(CompanyContext);
   const navigate = useNavigate();
 
-  const [currentImage, setCurrentImage] = useState(0);
-
-  const [editName, setEditName] = useState(false);
-  const [editDescription, setEditDescription] = useState(false);
-  const [tempName, setTempName] = useState(company?.name || "");
-  const [tempDescription, setTempDescription] = useState(company?.description || "");
-
-  const [services, setServices] = useState(company?.services || []);
-  const [slots, setSlots] = useState(company?.slots || []);
-
+  const [loading, setLoading] = useState(true);
+  const [tempName, setTempName] = useState("");
+  const [tempDescription, setTempDescription] = useState("");
+  const [services, setServices] = useState([]);
+  const [slots, setSlots] = useState([]);
   const [newServiceName, setNewServiceName] = useState("");
   const [newServicePrice, setNewServicePrice] = useState("");
-
   const [newStart, setNewStart] = useState("");
   const [newEnd, setNewEnd] = useState("");
+  const [newServiceId, setNewServiceId] = useState("");
 
+  const colRef0 = useRef(null);
+  const colRef1 = useRef(null);
+  const colRef2 = useRef(null);
+
+  // Učitavanje podataka firme, termina i slika
   useEffect(() => {
-    setTempName(company?.name || "");
-    setTempDescription(company?.description || "");
-    setServices(company?.services || []);
-    setSlots(company?.slots || []);
-  }, [company]);
+    if (!company?.id) return;
 
-  if (!company) return <div className="p-6 text-center text-white">Firma nije pronađena.</div>;
+    setTempName(company.name || "");
+    setTempDescription(company.description || "");
+    setServices(Array.isArray(company.services) ? company.services : []);
 
-  // -------------------- IMAGE HANDLERS --------------------
-  const prevImage = () =>
-    setCurrentImage((prev) => (prev - 1 + company.images.length) % company.images.length);
-  const nextImage = () =>
-    setCurrentImage((prev) => (prev + 1) % company.images.length);
+    const loadSlotsAndImages = async () => {
+      try {
+        const resSlots = await API.get(`/companies/${company.id}/slots`);
+        setSlots(resSlots.data.slots || []);
+      } catch (err) {
+        console.error("Greška pri učitavanju termina :", err);
+        setSlots([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleUploadSuccess = async (newImages) => {
-    await updateCompany({ ...company, images: newImages });
-    setCurrentImage(0);
+    loadSlotsAndImages();
+  }, [company?.id, company.name, company.description, company.services]);
+
+  // IntersectionObserver za animacije kolona
+  useEffect(() => {
+    const colRefs = [colRef0, colRef1, colRef2]; // pomeramo unutar useEffect
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("opacity-100", "translate-y-0");
+            entry.target.classList.remove("opacity-0", "translate-y-10");
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    colRefs
+      .map((ref) => ref.current)
+      .filter(Boolean)
+      .forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []); // prazna dependency lista sada, warning je uklonjen
+
+  // Dodavanje nove slike
+  const handleUploadSuccess = (imagesFromDb) => {
+    setCompanyImages(imagesFromDb);
   };
 
+  // Brisanje slike
   const handleDeleteImage = async (index) => {
     if (!window.confirm("Obrisati sliku?")) return;
+
+    const image = company.images[index];
+    if (!image?.id) return;
+
     try {
-      const imageId = company.images[index].id;
-      await API.delete(`/companies/images/${imageId}`);
-      const updatedImages = company.images.filter((_, i) => i !== index);
-      await updateCompany({ ...company, images: updatedImages });
-      setCurrentImage(0);
+      await API.delete(`/companies/images/${image.id}`);
+      const filtered = company.images.filter((_, i) => i !== index);
+      setCompanyImages(filtered);
+      toast.info("Slika obrisana");
     } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "Greška pri brisanju slike");
+      console.error("Greška pri brisanju slike:", err);
+      toast.error("Greška pri brisanju slike");
     }
   };
 
-  // -------------------- SERVICES --------------------
+  // Dodavanje usluge
   const handleAddService = async (e) => {
     e.preventDefault();
-    if (!newServiceName.trim() || !newServicePrice) return alert("Unesite naziv i cenu usluge");
+    if (!newServiceName.trim() || !newServicePrice) return toast.error("Unesite naziv i cenu usluge");
 
-    const updated = [...services, { name: newServiceName, price: Number(newServicePrice) }];
-    setServices(updated);
+    const tempId = `temp-${Date.now()}`;
+    const newService = { tempId, name: newServiceName.trim(), price: Number(newServicePrice), duration: 60 };
+    setServices((prev) => [...prev, newService]);
     setNewServiceName("");
     setNewServicePrice("");
-    await updateCompany({ ...company, services: updated });
+    toast.success("Usluga dodata, sačuvaj je pre dodavanja termina");
   };
 
-  const handleDeleteService = async (idx) => {
-    const updated = services.filter((_, i) => i !== idx);
-    setServices(updated);
-    await updateCompany({ ...company, services: updated });
+  // Brisanje usluge
+  const handleDeleteService = (id) => {
+    setServices((prev) => prev.filter((s) => String(s.id ?? s.tempId) !== String(id)));
+    setSlots((prev) => prev.filter((slot) => String(slot.service_id) !== String(id) && String(slot.tempServiceId) !== String(id)));
+    toast.info("Usluga obrisana");
   };
 
-  // -------------------- SLOTS --------------------
-  const handleAddSlot = async (e) => {
+  // Dodavanje termina
+  const handleAddSlot = (e) => {
     e.preventDefault();
-    if (!newStart || !newEnd) return alert("Unesite početak i kraj termina");
+    if (!newStart || !newEnd || !newServiceId) return toast.error("Popunite sve podatke za termin");
 
-    const startISO = new Date(newStart).toISOString();
-    const endISO = new Date(newEnd).toISOString();
+    const service = services.find((s) => String(s.id) === String(newServiceId) || s.tempId === newServiceId);
+    if (!service) return toast.error("Morate sačekati da servis bude sačuvan pre dodavanja termina");
 
-    const updated = [...slots, { start_time: startISO, end_time: endISO }];
-    setSlots(updated);
+    const newSlot = {
+      id: `temp-${Date.now()}`,
+      service_id: Number(newServiceId) || undefined,
+      tempServiceId: service.tempId || undefined,
+      start_time: newStart,
+      end_time: newEnd,
+      is_booked: false,
+    };
+    setSlots((prev) => [...prev, newSlot]);
     setNewStart("");
     setNewEnd("");
+    setNewServiceId("");
+    toast.success("Termin dodat");
+  };
+
+  // Brisanje termina
+  const handleDeleteSlot = async (slotId) => {
+    const slot = slots.find((s) => s.id === slotId);
+    if (!slot || slot.is_booked) return;
 
     try {
-      await updateCompany({ ...company, slots: updated });
+      await API.delete(`/slots/${slotId}`);
+      setSlots((prev) => prev.filter((s) => s.id !== slotId));
+      toast.info("Termin obrisan");
     } catch (err) {
-      console.error("Greška pri dodavanju termina:", err.response?.data || err);
-      alert(err.response?.data?.message || "Greška pri dodavanju termina");
+      console.error(err);
+      toast.error("Greška pri brisanju termina");
     }
   };
 
-  const handleDeleteSlot = async (idx) => {
-    const updated = slots.filter((_, i) => i !== idx);
-    setSlots(updated);
-    await updateCompany({ ...company, slots: updated });
-  };
-
-  // -------------------- ZAVRŠI DUGME --------------------
+  // Čuvanje svih izmena
   const handleFinish = async () => {
+    setLoading(true);
     try {
-      // Sačuvaj sve podatke pre navigacije
-      await updateCompany({ ...company, slots, services, images: company.images });
+      await updateCompany({ id: company.id, name: tempName, description: tempDescription });
+
+      const updatedServices = await updateCompanyServices(services);
+
+      const serviceIdMap = {};
+      updatedServices.forEach((s) => {
+        if (s.tempId) serviceIdMap[s.tempId] = s.id;
+      });
+
+      const slotsWithRealIds = slots.map((slot) => ({
+        ...slot,
+        service_id: serviceIdMap[slot.service_id] ?? slot.service_id,
+      }));
+
+      const savedSlots = await updateCompanySlots(slotsWithRealIds);
+      setSlots(savedSlots);
+
+      toast.success("Sve izmene sačuvane");
       navigate("/profile");
     } catch (err) {
-      console.error("Greška pri završavanju:", err.response?.data || err);
-      alert(err.response?.data?.message || "Greška pri završavanju");
+      console.error("Greška pri čuvanju izmena:", err);
+      toast.error("Greška pri čuvanju izmena");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // -------------------- RENDER --------------------
+  if (loading) return <div className="flex justify-center items-center min-h-screen text-gray-900 bg-gray-100">Učitavanje...</div>;
+  if (!company) return <div className="p-6 text-center text-gray-900">Firma nije pronađena.</div>;
+
   return (
-    <div className="min-h-screen bg-gray-500 text-white p-6">
-      <div className="max-w-6xl mx-auto space-y-10">
+    <div className="min-h-screen bg-gray-200 p-4 md:p-6 text-gray-900">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        {/* NAME / DESCRIPTION */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">
-            {editName ? (
-              <input
-                type="text"
-                value={tempName}
-                onChange={(e) => setTempName(e.target.value)}
-                onBlur={async () => {
-                  await updateCompany({ ...company, name: tempName });
-                  setEditName(false);
-                }}
-                className="border-b border-gray-300 bg-gray-400 text-white px-2 py-1 focus:outline-none"
-                autoFocus
-              />
-            ) : (
-              <span onClick={() => setEditName(true)} className="cursor-pointer hover:underline">
-                {company.name || "Dodajte naziv firme"}
-              </span>
-            )}
-          </h1>
-          <p className="text-gray-100">
-            {editDescription ? (
-              <textarea
-                value={tempDescription}
-                onChange={(e) => setTempDescription(e.target.value)}
-                onBlur={async () => {
-                  await updateCompany({ ...company, description: tempDescription });
-                  setEditDescription(false);
-                }}
-                className="w-full max-w-md bg-gray-400 border border-gray-300 rounded p-2 text-white focus:outline-none"
-                rows={3}
-                autoFocus
-              />
-            ) : (
-              <span onClick={() => setEditDescription(true)} className="cursor-pointer hover:underline">
-                {company.description || "Dodajte opis firme"}
-              </span>
-            )}
-          </p>
+        {/* Company info & Images */}
+        <div ref={colRef0} className="transition-all duration-700 ease-out space-y-6">
+          <div className="bg-cardBg p-6 rounded-2xl shadow-md space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <h2 className="text-xl font-semibold text-textDark">Informacije o firmi</h2>
+            <input type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} placeholder="Naziv firme" className="w-full border border-gray-400 shadow-2xl p-2 rounded-lg" />
+            <textarea value={tempDescription} onChange={(e) => setTempDescription(e.target.value)} placeholder="Opis firme" className="w-full border border-gray-400 shadow-2xl p-2 rounded-lg" />
+          </div>
+
+          <div className="bg-cardBg p-6 border border-gray-400 shadow-2xlrounded-2xl shadow-md space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative">
+            <h2 className="text-xl font-semibold text-textDark">Slike</h2>
+            <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide relative z-10">
+              {(company.images || []).map((img, idx) => (
+                <div key={img.id ?? `img-${idx}`} className="relative w-40 h-40 flex-shrink-0 group overflow-hidden rounded-lg border border-gray-400 shadow-2xl">
+                  <img src={getImageUrl(img)} alt={img.alt || ""} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={(e) => (e.target.src = getImageUrl(null))} />
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <button onClick={() => handleDeleteImage(idx)} className="bg-gray-300 text-white px-4 py-2 rounded-xl font-semibold shadow-lg hover:bg-accentLight transition-all duration-300">Obriši</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <CompanyImageUpload companyId={company.id} onUploadSuccess={handleUploadSuccess} />
+          </div>
         </div>
 
-        {/* IMAGES */}
-        <div className="space-y-4 bg-gray-400 p-4 rounded shadow">
-          <h2 className="text-xl font-semibold">Slike firme</h2>
-          {company.images?.length > 0 ? (
-            <div className="space-y-2">
-              <div className="relative w-full max-w-3xl h-64 mx-auto overflow-hidden rounded-lg shadow-lg">
-                <img
-                  src={`http://localhost:3001${company.images[currentImage].image_path}`}
-                  alt={company.name}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-                {company.images.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full hover:bg-gray-700 transition"
-                    >
-                      ‹
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full hover:bg-gray-700 transition"
-                    >
-                      ›
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={() => handleDeleteImage(currentImage)}
-                  className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
-                >
-                  Obriši
-                </button>
-              </div>
+        {/* Services */}
+        <div ref={colRef1} className="bg-cardBg border border-gray-400 shadow-2xl p-6 rounded-2xl space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <h2 className="text-xl font-semibold text-textDark">Usluge</h2>
+          <form onSubmit={handleAddService} className="flex gap-2 flex-wrap">
+            <input value={newServiceName} onChange={(e) => setNewServiceName(e.target.value)} placeholder="Naziv usluge" className="p-2 border border-gray-400 shadow-2xl rounded-lg" required />
+            <input value={newServicePrice} onChange={(e) => setNewServicePrice(e.target.value)} placeholder="Cena" type="number" className="p-2 border border-gray-400 shadow-2xl rounded-lg" required />
+            <button type="submit" className="border border-gray-400 shadow-2xl text-black px-4 py-2 rounded-lg hover:bg-accentLight transition">Dodaj</button>
+          </form>
+          <ul>
+            {services.map((s, idx) => (
+              <li key={s.id ?? `service-${idx}`} className="flex justify-between p-2 border border-gray-400 shadow-2xl rounded-lg mt-2">
+                {s.name} — {s.price} RSD
+                <button onClick={() => handleDeleteService(s.id)} className="text-black hover:text-gray-600 transition">Obriši</button>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-              <div className="flex justify-center gap-2 overflow-x-auto">
-                {company.images.map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={`http://localhost:3001${img.image_path}`}
-                    alt={`Thumb ${idx}`}
-                    className={`w-16 h-16 object-cover rounded cursor-pointer border-2 ${idx === currentImage ? "border-red-600" : "border-transparent"}`}
-                    onClick={() => setCurrentImage(idx)}
-                  />
-                ))}
-              </div>
-            </div>
+        {/* Slots */}
+        <div ref={colRef2} className="bg-cardBg border border-gray-400 shadow-2xl p-6 rounded-2xl shadow-md space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <h2 className="text-xl font-semibold text-textDark">Termini</h2>
+          {slots
+            .filter((s) =>
+              services.some((serv) => String(serv.id) === String(s.service_id))
+            )
+            .length > 0 ? (
+            slots
+              .filter((s) =>
+                services.some((serv) => String(serv.id) === String(s.service_id))
+              )
+              .map((s, idx) => (
+                <div
+                  key={s.id ?? `slot-${idx}`}
+                  className="p-2 border border-gray-400 shadow-2xl text-gray-600 rounded-lg flex justify-between items-center"
+                >
+                  <span>
+                    <span>
+                      {s.start_time && s.end_time
+                        ? `${new Date(s.start_time).toLocaleString()} – ${new Date(
+                          s.end_time
+                        ).toLocaleTimeString()}`
+                        : "Nepoznat termin"}
+                    </span>
+                    {` (${services.find(
+                      (serv) => String(serv.id) === String(s.service_id)
+                    )?.name
+                      })`}
+                    {s.is_booked && " (rezervisan)"}
+                  </span>
+
+                  <button
+                    onClick={() => handleDeleteSlot(s.id)}
+                    disabled={s.is_booked}
+                    className={`px-2 py-1 rounded-lg text-black ${s.is_booked
+                      ? "bg-gray-600 cursor-not-allowed"
+                      : "border border-gray-400 shadow-2xl text-gray-600 hover:bg-gray-600"
+                      }`}
+                  >
+                    Obriši
+                  </button>
+                </div>
+              ))
           ) : (
-            <div className="w-full h-64 bg-gray-500 flex items-center justify-center rounded-lg mb-4">
-              Nema slika
-            </div>
+            <p className="text-gray-500">Nema termina</p>
           )}
-          <CompanyImageUpload companyId={company.id} onUpload={handleUploadSuccess} />
-        </div>
 
-        {/* SERVICES */}
-        <div className="space-y-4 bg-gray-400 p-4 rounded shadow">
-          <h2 className="text-xl font-semibold">Usluge i cene</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {services.length > 0 ? services.map((s, idx) => (
-              <div key={idx} className="p-4 bg-gray-500 rounded flex justify-between items-center">
-                <span>{s.name} – {s.price} RSD</span>
-                <button
-                  onClick={() => handleDeleteService(idx)}
-                  className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition"
-                >
-                  Obriši
-                </button>
-              </div>
-            )) : <p className="text-gray-100 col-span-full">Nema unetih usluga</p>}
-          </div>
-          <form onSubmit={handleAddService} className="mt-2 flex gap-2 flex-wrap">
-            <input
-              type="text"
-              placeholder="Naziv usluge"
-              value={newServiceName}
-              onChange={(e) => setNewServiceName(e.target.value)}
-              className="bg-gray-500 border border-gray-300 px-2 py-1 rounded text-white focus:outline-none flex-1"
-            />
-            <input
-              type="number"
-              placeholder="Cena"
-              value={newServicePrice}
-              onChange={(e) => setNewServicePrice(e.target.value)}
-              className="bg-gray-500 border border-gray-300 px-2 py-1 rounded text-white focus:outline-none w-32"
-            />
-            <button type="submit" className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition">
-              Dodaj
-            </button>
+          <form onSubmit={handleAddSlot} className="flex gap-2 flex-wrap items-center mt-2">
+            <input type="datetime-local" value={newStart} onChange={(e) => setNewStart(e.target.value)} className="border border-gray-400 shadow-2xl p-2 rounded-lg" required />
+            <input type="datetime-local" value={newEnd} onChange={(e) => setNewEnd(e.target.value)} className="border border-gray-400 shadow-2xl p-2 rounded-lg" required />
+            <select value={newServiceId} onChange={(e) => setNewServiceId(e.target.value)} className="border border-gray-400 shadow-2xl p-2 rounded-lg" required>
+              <option value="">Odaberite uslugu</option>
+              {services.map((s, idx) => (
+                <option key={s.id ?? `temp-${idx}`} value={s.id ?? s.tempId}>{s.name}</option>
+              ))}
+            </select>
+            <button type="submit" className="border border-gray-400 shadow-2xl text-gray-600 px-4 py-2 rounded-lg hover:bg-accentLight transition">Dodaj termin</button>
           </form>
         </div>
+      </div>
 
-        {/* SLOTS */}
-        <div className="space-y-4 bg-gray-400 p-4 rounded shadow">
-          <h2 className="text-xl font-semibold">Termini</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {slots.length > 0 ? slots.map((s, idx) => (
-              <div key={idx} className="p-4 bg-gray-500 rounded flex justify-between items-center">
-                <span>{new Date(s.start_time).toLocaleDateString()} {new Date(s.start_time).toLocaleTimeString()} – {new Date(s.end_time).toLocaleTimeString()}</span>
-                <button
-                  onClick={() => handleDeleteSlot(idx)}
-                  className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition"
-                >
-                  Obriši
-                </button>
-              </div>
-            )) : <p className="text-gray-100 col-span-full">Nema unetih termina</p>}
-          </div>
-          <form onSubmit={handleAddSlot} className="mt-2 flex gap-2 flex-wrap">
-            <input
-              type="datetime-local"
-              value={newStart}
-              onChange={e => setNewStart(e.target.value)}
-              className="bg-gray-500 border border-gray-300 px-2 py-1 rounded text-white focus:outline-none"
-            />
-            <input
-              type="datetime-local"
-              value={newEnd}
-              onChange={e => setNewEnd(e.target.value)}
-              className="bg-gray-500 border border-gray-300 px-2 py-1 rounded text-white focus:outline-none"
-            />
-            <button type="submit" className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition">
-              Dodaj termin
-            </button>
-          </form>
-        </div>
-
-        {/* ZAVRŠI DUGME */}
-        <div className="mt-6 flex justify-end">
-          <button
-            type="button"
-            onClick={handleFinish}
-            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-700 transition"
-          >
-            Završi
-          </button>
-        </div>
-
+      <div className="mt-6">
+        <button onClick={handleFinish} className="border border-gray-400 shadow-2xl text-black font-semibold px-10 py-2 rounded-lg hover:bg-gray-600 transition">
+          Sačuvaj sve izmene
+        </button>
       </div>
     </div>
   );

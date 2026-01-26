@@ -1,13 +1,11 @@
-import React from "react";
-
 const Button = ({ children, onClick, type = "button", variant = "primary", className = "" }) => {
-  let baseClasses = "px-4 py-2 rounded text-white transition";
+  let baseClasses = "px-4 py-2 rounded-xl text-white transition";
 
   const variants = {
     primary: "bg-primary hover:bg-primaryHover",
     accent: "bg-accent hover:bg-accentLight",
     black: "bg-black hover:bg-gray-700",
-    gray: "bg-gray-400 hover:bg-gray-500",
+    gray: "bg-gray-300 hover:bg-gray-400",
   };
 
   return (

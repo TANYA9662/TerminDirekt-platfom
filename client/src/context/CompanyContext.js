@@ -7,6 +7,7 @@ export const CompanyContext = createContext();
 const emptyCompany = {
   id: null,
   name: "",
+  city: "",
   description: "",
   images: [],
   services: [],
@@ -14,74 +15,54 @@ const emptyCompany = {
   user_id: null,
 };
 
-// Funkcija koja proverava da li je company kompletna
-const isCompanyComplete = (company) => {
-  return Boolean(
-    company &&
-    company.id &&
+const isCompanyComplete = (company) =>
+  Boolean(
+    company?.id &&
     company.name?.trim() &&
+    company.description?.trim() &&
     Array.isArray(company.images) &&
     company.images.length > 0 &&
     Array.isArray(company.services) &&
     company.services.length > 0
   );
-};
 
 export const CompanyProvider = ({ children }) => {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+
   const [company, setCompany] = useState(emptyCompany);
-  const [status, setStatus] = useState("loading"); // loading | ready
+  const [status, setStatus] = useState("loading");
   const [companyComplete, setCompanyComplete] = useState(false);
 
-  // Fetch company za ulogovanog korisnika
+  /* ================= FETCH COMPANY ================= */
   useEffect(() => {
-    // Nema usera ili nije company
-    if (!user || user.role !== "company") {
+    if (!user || user.role !== "company" || loading) {
       setCompany(emptyCompany);
       setCompanyComplete(false);
       setStatus("ready");
       return;
     }
 
-    // ✅ AKO VEĆ IMAMO COMPANY IZ AUTH CONTEXT-A — KORISTI NJU
-    if (user.company && user.company.id) {
-      const fullCompany = {
-        ...emptyCompany,
-        ...user.company,
-        images: Array.isArray(user.company.images) ? user.company.images : [],
-        services: Array.isArray(user.company.services) ? user.company.services : [],
-        slots: Array.isArray(user.company.slots) ? user.company.slots : [],
-        user_id: user.company.user_id ?? user.id,
-      };
-
-      setCompany(fullCompany);
-      setCompanyComplete(isCompanyComplete(fullCompany));
-      setStatus("ready");
-      return;
-    }
-
-    // ⬇️ FETCHUJ SAMO AKO NEMA COMPANY U AUTH CONTEXT-U
     const fetchCompany = async () => {
+      setStatus("loading");
       try {
         const token = localStorage.getItem("token");
         if (token) setAuthToken(token);
 
-        const res = await API.get(`/companies/user/${user.id}/details`);
-        const companyData = res.data ?? emptyCompany;
+        const res = await API.get("/companies/me"); // centralni endpoint
+        const data = res.data ?? {};
 
-        const fullCompany = {
+        const normalized = {
           ...emptyCompany,
-          ...companyData,
-          images: Array.isArray(companyData.images) ? companyData.images : [],
-          services: Array.isArray(companyData.services) ? companyData.services : [],
-          slots: Array.isArray(companyData.slots) ? companyData.slots : [],
-          user_id: companyData.user_id ?? user.id,
+          ...data,
+          images: Array.isArray(data.images) ? data.images : [],
+          services: Array.isArray(data.services) ? data.services : [],
+          slots: Array.isArray(data.slots) ? data.slots : [],
         };
 
-        setCompany(fullCompany);
-        setCompanyComplete(isCompanyComplete(fullCompany));
+        setCompany(normalized);
+        setCompanyComplete(isCompanyComplete(normalized));
       } catch (err) {
-        console.error("Company fetch error:", err);
+        console.error("Greška pri fetchu firme:", err.response?.status, err.response?.data);
         setCompany(emptyCompany);
         setCompanyComplete(false);
       } finally {
@@ -90,61 +71,102 @@ export const CompanyProvider = ({ children }) => {
     };
 
     fetchCompany();
-  }, [user]);
+  }, [user, loading]);
 
-  // Funkcija za update ili upsert company
-  const updateCompany = async (data, config = {}) => {
+  /* ================= UPDATE FUNCTIONS ================= */
+  const updateCompany = async (payload) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Korisnik nije ulogovan");
+      if (token) setAuthToken(token);
 
-      const headers = { Authorization: `Bearer ${token}` };
-      let updatedCompany;
+      const id = payload.id ?? company.id;
+      const res = id
+        ? await API.put(`/companies/${id}`, payload)
+        : await API.post("/companies", payload);
 
-      if (data instanceof FormData) {
-        const res = await API.post("/companies", data, { headers });
-        updatedCompany = { ...company, ...res.data.company };
-      } else {
-        const payload = {
-          ...data,
-          id: data.id ?? company?.id,
-          userId: data.userId ?? company?.user_id ?? user.id,
+      const data = res.data?.company ?? {};
+
+      setCompany(prev => {
+        const updated = {
+          ...prev,   // nikad emptyCompany
+          ...data,   // samo šta backend vrati
         };
+        setCompanyComplete(isCompanyComplete(updated));
+        return updated;
+      });
 
-        if (payload.services && !Array.isArray(payload.services)) {
-          payload.services = JSON.stringify(payload.services);
-        }
-
-        const res = await API.post("/companies", payload, {
-          headers,
-          ...config,
-        });
-
-        updatedCompany = { ...company, ...res.data.company };
-      }
-
-      const fullCompany = {
-        ...emptyCompany,
-        ...updatedCompany,
-        images: Array.isArray(updatedCompany.images) ? updatedCompany.images : [],
-        services: Array.isArray(updatedCompany.services) ? updatedCompany.services : [],
-        slots: Array.isArray(updatedCompany.slots) ? updatedCompany.slots : [],
-        user_id: updatedCompany.user_id ?? user.id,
-      };
-
-      setCompany(fullCompany);
-      setCompanyComplete(isCompanyComplete(fullCompany));
-
-      return fullCompany;
+      return res.data?.company;
     } catch (err) {
-      console.error("Company update error:", err);
+      console.error("Greška pri update firme:", err);
       throw err;
     }
   };
 
+  /* ================= SET COMPANY IMAGES ================= */
+  const setCompanyImages = (images) => {
+    setCompany(prev => {
+      const updated = { ...prev, images };
+      setCompanyComplete(isCompanyComplete(updated));
+      return updated;
+    });
+  };
+
+  /* ================= SERVICES ================= */
+  const updateCompanyServices = async (services) => {
+    const res = await API.put(`/companies/${company.id}/services`, { services });
+
+    setCompany(prev => {
+      const updated = {
+        ...prev,
+        services: res.data.services,
+      };
+      setCompanyComplete(isCompanyComplete(updated));
+      return updated;
+    });
+
+    return res.data.services;
+  };
+
+  /* ================= SLOTS ================= */
+  const updateCompanySlots = async (slots) => {
+    const res = await API.put(`/companies/${company.id}/slots`, { slots });
+
+    setCompany(prev => ({
+      ...prev,
+      slots: res.data.slots,
+    }));
+
+    return res.data.slots;
+  };
+
+  /* ================= SAVE EVERYTHING FUNCTION ================= */
+  const saveCompanyData = async ({ name, description, services, slots }) => {
+    const updatedCompany = await updateCompany({
+      id: company.id,
+      name,
+      description,
+    });
+
+    const updatedServices = await updateCompanyServices(services);
+    const updatedSlots = await updateCompanySlots(slots);
+
+    return { updatedCompany, updatedServices, updatedSlots };
+  };
+
+  /* ================= CONTEXT PROVIDER ================= */
   return (
     <CompanyContext.Provider
-      value={{ company, setCompany, companyComplete, status, updateCompany }}
+      value={{
+        company,
+        status,
+        companyComplete,
+        updateCompany,
+        updateCompanyServices,
+        updateCompanySlots,
+        setCompanyImages, // nova funkcija za direktno setovanje slika
+        saveCompanyData,
+        setCompany,
+      }}
     >
       {children}
     </CompanyContext.Provider>

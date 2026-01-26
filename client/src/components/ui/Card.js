@@ -1,8 +1,6 @@
-import React from "react";
-
 const Card = ({ children, className = "" }) => {
   return (
-    <div className={`bg-gray-400 text-white p-4 rounded-lg shadow-md ${className}`}>
+    <div className={`bg-gray-200 text-textDark p-4 rounded-2xl shadow-md ${className}`}>
       {children}
     </div>
   );

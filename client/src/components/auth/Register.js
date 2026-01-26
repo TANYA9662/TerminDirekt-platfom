@@ -61,8 +61,8 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
-      <div className="p-8 rounded-2xl shadow-lg w-full max-w-md bg-black text-white">
+    < div className="min-h-screen flex items-center justify-center bg-gray-100" >
+      <div className="p-10 rounded-2xl bg-white border border-gray-400 shadow-2xl w-full max-w-md backdrop-blur-sm">
         <h2 className="text-2xl font-bold mb-6 text-center">Registracija</h2>
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -70,7 +70,7 @@ const Register = () => {
             name="role"
             value={form.role}
             onChange={handleChange}
-            className="w-full border border-red-600 px-4 py-2 rounded bg-black text-white"
+            className="w-full p-3 border border-gray-400 shadow-2xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80"
           >
             <option value="user">Korisnik</option>
             <option value="company">Firma</option>
@@ -83,7 +83,7 @@ const Register = () => {
             value={form.name}
             onChange={handleChange}
             required={form.role === "company"}
-            className="w-full border border-red-600 px-4 py-2 rounded bg-black text-white"
+            className="w-full p-3 border border-gray-400 shadow-2xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80"
           />
 
           {form.role === "company" && (
@@ -94,7 +94,7 @@ const Register = () => {
                 placeholder="Grad"
                 value={form.city}
                 onChange={handleChange}
-                className="w-full border border-red-600 px-4 py-2 rounded bg-black text-white"
+                className="w-full p-3 border border-gray-400 shadow-2xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80"
               />
               <input
                 name="phone"
@@ -102,7 +102,7 @@ const Register = () => {
                 placeholder="Telefon"
                 value={form.phone}
                 onChange={handleChange}
-                className="w-full border border-red-600 px-4 py-2 rounded bg-black text-white"
+                className="w-full p-3 border border-gray-400 shadow-2xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80"
               />
             </>
           )}
@@ -114,7 +114,7 @@ const Register = () => {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full border border-red-600 px-4 py-2 rounded bg-black text-white"
+            className="w-full p-3 border border-gray-400 shadow-2xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80"
           />
           <input
             name="password"
@@ -123,18 +123,19 @@ const Register = () => {
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full border border-red-600 px-4 py-2 rounded bg-black text-white"
+            className="w-full p-3 border border-gray-400 shadow-2xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80"
           />
 
           <button
             type="submit"
-            className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            className="w-full bg-white/80  text-gray-900  border border-gray-400 shadow-2xl  font-bold p-3 rounded-lg hover:bg-accent transition"
           >
             Registruj se
           </button>
         </form>
       </div>
-    </div>
+    </div >
+
   );
 };
 

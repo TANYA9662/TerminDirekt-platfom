@@ -15,7 +15,6 @@ const Login = () => {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  // Helper funkcija za proveru da li je onboarding završen
   const isCompanyComplete = (company) => {
     return (
       company &&
@@ -34,29 +33,28 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Login usera sa samo email i password
       const res = await loginUser({ email: form.email, password: form.password });
       const { token, user } = res;
 
-      // Postavi token za buduće API pozive
       setAuthToken(token);
 
-      // Sačuvaj usera i token u context
-      login(user, token);
-
+      let company = null;
       if (user.role === "company") {
-        // Dohvati kompaniju da proverimo onboarding
+        // fetch company details
         const companyRes = await API.get(`/companies/user/${user.id}/details`);
-        const company = companyRes.data;
+        company = companyRes.data;
+      }
 
-        // Navigiraj prema statusu onboarding-a
+      // update user u kontekstu sa company
+      login({ ...user, company }, token);
+
+      // navigacija
+      if (user.role === "company") {
         navigate(isCompanyComplete(company) ? "/company-dashboard" : "/onboarding/company");
       } else {
-        // Standardni korisnik
         navigate("/dashboard");
       }
     } catch (err) {
-      // Prikazi grešku
       setError(err.response?.data?.message || "Greška pri prijavi");
     } finally {
       setLoading(false);
@@ -64,10 +62,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-6 bg-white rounded-2xl shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-center">Prijava</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100" >
+      <div className="max-w-md w-full p-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg">
+        <h2 className="text-2xl font-bold mb-6 text-center text-textDark">Prijava</h2>
+
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+
         <form onSubmit={handleLogin} className="space-y-4">
           <input
             type="email"
@@ -76,8 +76,9 @@ const Login = () => {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full border px-4 py-2 rounded"
+            className="w-full p-3 border border-gray-400 shadow-2xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80"
           />
+
           <input
             type="password"
             name="password"
@@ -85,13 +86,25 @@ const Login = () => {
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full border px-4 py-2 rounded"
+            className="w-full p-3 border border-gray-400 shadow-2xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80"
           />
+
+          {/* Link za zaboravljenu lozinku */}
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => navigate("/reset-password-request")}
+              className="text-sm text-accent hover:underline"
+            >
+              Zaboravili ste lozinku?
+            </button>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className={`w-full px-4 py-2 rounded text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600"
-              }`}
+            className={`w-full px-4 py-2  border border-gray-400 shadow-2xl rounded-lg font-bold text-gray-900 ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-gwhite hover:bg-accent"
+              } transition`}
           >
             {loading ? "Prijavljivanje..." : "Prijavi se"}
           </button>
