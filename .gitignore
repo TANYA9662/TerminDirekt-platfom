@@ -1,6 +1,7 @@
 # Node modules
 node_modules/
 termin-direkt-frontend/node_modules/
+Server/node_modules/
 
 # Build / dist
 build/
@@ -8,6 +9,7 @@ dist/
 
 # Environment files
 .env
+Server/.env
 
 # Logs
 npm-debug.log*
