@@ -1,24 +1,24 @@
 # Node modules
 node_modules/
-termin-direkt-frontend/node_modules/
 Server/node_modules/
-
-# Build / dist
-build/
-dist/
+client/node_modules/
 
 # Environment files
 .env
 Server/.env
+
+# Build / dist
+build/
+dist/
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# OS fajlovi
+# OS files
 .DS_Store
 
-# IDE fajlovi
+# IDE files
 .vscode/
 .idea/
