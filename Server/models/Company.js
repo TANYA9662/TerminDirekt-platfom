@@ -1,17 +1,61 @@
 import pool from '../db/pool.js';
 
-export const createCompany = async ({ name, category, city, address, phone, description, images }) => {
+/* ===== Kreiranje firme sa povezivanjem na kategoriju ===== */
+export const createCompanyWithCategory = async ({ name, city, address, phone, description, images, categoryId }) => {
+  // Kreiraj firmu
+  const companyRes = await pool.query(
+    `INSERT INTO companies (name, city, address, phone, description, images)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [name, city, address, phone, description, images]
+  );
+
+  const company = companyRes.rows[0];
+
+  // Poveži firmu sa kategorijom
+  await pool.query(
+    `INSERT INTO company_categories (company_id, category_id) VALUES ($1, $2)`,
+    [company.id, categoryId]
+  );
+
+  return company;
+};
+
+// Dodaj slike u company_images
+export const addCompanyImages = async (companyId, files) => {
+  const queries = files.map(file =>
+    pool.query(
+      `INSERT INTO company_images (company_id, image_path) VALUES ($1, $2)`,
+      [companyId, file.filename]
+    )
+  );
+  await Promise.all(queries);
+};
+
+// Dodaj uslugu
+export const addServices = async (companyId, name, price, duration) => {
   const res = await pool.query(
-    `INSERT INTO companies (name, category, city, address, phone, description, images)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-    [name, category, city, address, phone, description, images]
+    `INSERT INTO services (company_id, name, price, duration) VALUES ($1, $2, $3, $4) RETURNING *`,
+    [companyId, name, price, duration]
   );
   return res.rows[0];
 };
 
+// Dodaj slotove za uslugu
+export const addSlots = async (serviceId, slots) => {
+  const queries = slots.map(slot =>
+    pool.query(
+      `INSERT INTO slots (service_id, start_time, end_time) VALUES ($1, $2, $3)`,
+      [serviceId, slot.start_time, slot.end_time]
+    )
+  );
+  await Promise.all(queries);
+};
+
+
+/* ===== Dobavljanje firme po ID ===== */
 export const getCompanyById = async (id) => {
   const res = await pool.query(
-    `SELECT id, name, category, city, address, phone, description,
+    `SELECT id, name, city, address, phone, description,
      COALESCE(images, ARRAY[]::text[]) AS images
      FROM companies WHERE id = $1`,
     [id]
@@ -19,6 +63,7 @@ export const getCompanyById = async (id) => {
   return res.rows[0];
 };
 
+/* ===== Update firme ===== */
 export const updateCompany = async (id, data) => {
   const fields = [];
   const values = [];
@@ -40,21 +85,19 @@ export const updateCompany = async (id, data) => {
   return res.rows[0];
 };
 
+/* ===== Brisanje firme ===== */
 export const deleteCompany = async (id) => {
   await pool.query(`DELETE FROM companies WHERE id = $1`, [id]);
 };
 
-export const getAllCompanies = async ({ search = '', category = '', city = '', limit = 20, offset = 0 }) => {
+/* ===== Dobavljanje svih firmi sa filtrima ===== */
+export const getAllCompanies = async ({ search = '', city = '', limit = 20, offset = 0 }) => {
   const params = [];
   let whereClause = 'WHERE 1=1';
 
   if (search) {
     params.push(`%${search}%`);
     whereClause += ` AND name ILIKE $${params.length}`;
-  }
-  if (category) {
-    params.push(category);
-    whereClause += ` AND category = $${params.length}`;
   }
   if (city) {
     params.push(city);
@@ -64,7 +107,7 @@ export const getAllCompanies = async ({ search = '', category = '', city = '', l
   params.push(limit, offset);
 
   const res = await pool.query(
-    `SELECT id, name, category, city, address, phone, description,
+    `SELECT id, name, city, address, phone, description,
      COALESCE(images, ARRAY[]::text[]) AS images
      FROM companies
      ${whereClause}
@@ -73,5 +116,5 @@ export const getAllCompanies = async ({ search = '', category = '', city = '', l
     params
   );
 
-  return res.rows; // 🔑 vraća samo niz kompanija
+  return res.rows;
 };

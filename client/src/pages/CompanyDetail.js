@@ -76,7 +76,7 @@ const CompanyDetail = () => {
         carouselIndex={carouselIndex}
         prevImage={prevImage}
         nextImage={nextImage}
-        companyName={company.name}
+        companyName={company?.name || "Nepoznata firma"}
         className="rounded-2xl shadow-md bg-gray-200"
       />
 

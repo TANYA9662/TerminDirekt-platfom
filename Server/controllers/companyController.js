@@ -75,7 +75,7 @@ const deleteCompanyImage = async (req, res) => {
   }
 };
 /* ================== GET ================== */
-const getAllCompanies = async (req, res, next) => {
+export const getAllCompanies = async (req, res, next) => {
   try {
     const result = await req.pool.query(
       "SELECT id, name, city FROM companies ORDER BY id"
@@ -109,7 +109,7 @@ const getAllCompanies = async (req, res, next) => {
   }
 };
 
-const getAllCompaniesForUsers = async (_, res) => {
+export const getAllCompaniesForUsers = async (_, res) => {
   try {
     const companiesRes = await pool.query('SELECT * FROM companies ORDER BY id DESC');
     const companies = [];
@@ -304,6 +304,73 @@ export const getAllCompaniesWithDetails = async (_, res) => {
     res.status(500).json({ message: 'Greška pri dohvaćanju firmi', error: err.message });
   }
 };
+
+const getCompaniesByCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      "SELECT * FROM companies WHERE category_id = $1",
+      [id]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Greška pri učitavanju firmi" });
+  }
+};
+
+// GET /api/categories/:id/companies/details
+export const getCompaniesByCategoryWithDetails = async (req, res) => {
+  const categoryId = parseInt(req.params.id);
+  if (isNaN(categoryId)) return res.status(400).json({ message: "Nevažeći categoryId" });
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT c.id, c.name, c.city, c.description,
+        json_agg(
+          DISTINCT jsonb_build_object(
+            'id', s.id,
+            'name', s.name,
+            'price', s.price,
+            'duration', s.duration
+          )
+        ) FILTER (WHERE s.id IS NOT NULL) AS services,
+        json_agg(
+          DISTINCT jsonb_build_object(
+            'id', sl.id,
+            'start_time', sl.start_time,
+            'end_time', sl.end_time,
+            'is_booked', sl.is_booked
+          )
+        ) FILTER (WHERE sl.id IS NOT NULL) AS slots,
+        json_agg(
+          DISTINCT jsonb_build_object(
+            'id', img.id,
+            'url', img.url
+          )
+        ) FILTER (WHERE img.id IS NOT NULL) AS images
+      FROM companies c
+      JOIN company_categories cc ON cc.company_id = c.id
+      LEFT JOIN services s ON s.company_id = c.id
+      LEFT JOIN slots sl ON sl.company_id = c.id
+      LEFT JOIN company_images img ON img.company_id = c.id
+      WHERE cc.category_id = $1
+      GROUP BY c.id
+      ORDER BY c.name ASC
+      `,
+      [categoryId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Greška na serveru" });
+  }
+};
+
 
 /* ================== SEARCH ================== */
 const searchCompanies = async (req, res) => {
@@ -626,6 +693,8 @@ export default {
   getMyCompany,
   getCompanySlots,
   getAllCompaniesWithDetails,
+  getCompaniesByCategory,
+  getCompaniesByCategoryWithDetails,
   searchCompanies,
   deleteCompany,
   deleteCompanyImage,

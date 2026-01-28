@@ -42,6 +42,8 @@ const CompanyCard = ({ company, onBook }) => {
         <h3 className="text-lg font-semibold truncate text-white drop-shadow-md">
           {company.name}
         </h3>
+        {company.city && <p className="text-white/80 text-sm">{company.city}</p>}
+
         <button
           onClick={() => onBook(company)}
           className="mt-2 py-2 w-full bg-white/5 text-white font-bold rounded hover:bg-white/30 transition"

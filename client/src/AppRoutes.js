@@ -2,6 +2,10 @@ import React, { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 import { CompanyContext } from "./context/CompanyContext";
+import CategoryPage from "./pages/CategoryPage";
+
+
+
 
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
@@ -21,7 +25,6 @@ export default function AppRoutes() {
   const { user, loading } = useContext(AuthContext);
   const { companyComplete: contextComplete, status } = useContext(CompanyContext);
 
-  // ⏳ Čekamo da se učitaju auth i company podaci
   if (loading || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -30,13 +33,14 @@ export default function AppRoutes() {
     );
   }
 
-  // 🚫 Guest (neregistrovan)
+  // 🚫 Guest
   if (!user) {
     return (
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/category/:id" element={<CategoryPage />} />
         <Route path="/reset-password-request" element={<ResetPasswordRequest />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -59,7 +63,6 @@ export default function AppRoutes() {
 
     return (
       <Routes>
-        {/* Onboarding za nove firme */}
         {!finalCompanyComplete && (
           <Route path="/onboarding/*" element={<OnboardingGuard />}>
             <Route element={<OnboardingLayout />}>
@@ -70,12 +73,13 @@ export default function AppRoutes() {
           </Route>
         )}
 
-        {/* Dashboard za kompletne firme */}
         {finalCompanyComplete && (
-          <Route path="/company-dashboard" element={<CompanyDashboard />} />
+          <>
+            <Route path="/company-dashboard" element={<CompanyDashboard />} />
+            <Route path="/category/:id" element={<CategoryPage />} />
+          </>
         )}
 
-        {/* Fallback route */}
         <Route
           path="*"
           element={
@@ -93,6 +97,7 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/category/:id" element={<CategoryPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

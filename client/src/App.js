@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CompanyProvider } from "./context/CompanyContext";
-import Header from "./components/ui/Header";
+import AppLayout from "./components/ui/AppLayout";
 import AppRoutes from "./AppRoutes";
 import { setAuthToken } from "./api";
 
@@ -13,8 +13,9 @@ export default function App() {
     <AuthProvider>
       <CompanyProvider>
         <BrowserRouter>
-          <Header />
-          <AppRoutes />
+          <AppLayout>
+            <AppRoutes />
+          </AppLayout>
         </BrowserRouter>
       </CompanyProvider>
     </AuthProvider>

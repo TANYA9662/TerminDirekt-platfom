@@ -220,7 +220,7 @@ export const deleteBooking = async (req, res) => {
     }
 
     const bookingRes = await client.query(
-      'SELECT slot_id, company_id FROM bookings WHERE id=$1 FOR UPDATE',
+      'SELECT slot_id, company_id, user_id FROM bookings WHERE id=$1 FOR UPDATE',
       [bookingId]
     );
 
@@ -233,7 +233,12 @@ export const deleteBooking = async (req, res) => {
 
     // Provera prava (admin ili firma)
     const companyId = await getCompanyId(req.user.id);
-    if (req.user.role !== 'admin' && booking.company_id !== companyId) {
+
+    const isAdmin = req.user.role === 'admin';
+    const isCompanyOwner = companyId && booking.company_id === companyId;
+    const isBookingOwner = booking.user_id === req.user.id;
+
+    if (!isAdmin && !isCompanyOwner && !isBookingOwner) {
       await client.query('ROLLBACK');
       return res.status(403).json({ message: 'Forbidden' });
     }

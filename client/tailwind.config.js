@@ -7,6 +7,7 @@ module.exports = {
   ],
   theme: {
     extend: {
+      // Boje koje koristiš širom aplikacije
       colors: {
         primary: "#4F46E5",
         primaryHover: "#4338CA",
@@ -19,6 +20,22 @@ module.exports = {
         textLight: "#374151",
         cardBg: "#FFFFFF",
       },
+      // Custom spacing koje si koristila za header, hero i slično
+      spacing: {
+        88: "22rem", // pt-[88] ili mt-[88]
+        20: "5rem",
+        28: "7rem",
+      },
+      // Responsive breakpoints
+      screens: {
+        xs: "480px",
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
+        "2xl": "1536px",
+      },
+      // Animacije
       keyframes: {
         fadeInUp: {
           "0%": { opacity: 0, transform: "translateY(20px)" },

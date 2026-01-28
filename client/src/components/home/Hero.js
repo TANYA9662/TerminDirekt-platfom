@@ -17,29 +17,25 @@ const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
   }
 
   return (
-    <section className="relative w-full flex flex-col items-center justify-center bg-gray-100 py-12 sm:py-16 md:pb-20 ">
+    <section className="relative w-full flex flex-col items-center justify-center bg-gray-100 pt-[18px] pb-10">
       <div
-        className="w-full relative overflow-hidden"
+        className="w-full relative overflow-hidden -mt-15"
         style={{
           backgroundImage: "url('/uploads/companies/pozadina.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          height: "40vh", // više vertikalno, slika je viša
-          minHeight: "400px",
+          height: "40vh",
+          minHeight: "280px",
         }}
       >
         {/* Tamni overlay */}
         <div className="absolute inset-0 bg-black/40" />
 
-        {/* Sadržaj hero sekcije - pozicioniran bliže donjem delu */}
-        <div className="relative z-10 max-w-5xl mx-auto px-6 sm:px-12 flex flex-col justify-end items-center text-center h-full gap-60 pb-12">
-
-          {/* Naslov */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 sm:px-12 flex flex-col justify-end items-center text-center h-full gap-10 pb-10">
           <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg mb-4">
             Zakažite termin online
           </h1>
 
-          {/* Search polja */}
           <div className="flex flex-col sm:flex-row justify-center gap-2 w-full max-w-3xl">
             <input
               type="text"
@@ -70,7 +66,6 @@ const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
           </div>
         </div>
       </div>
-
     </section>
 
   );

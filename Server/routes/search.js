@@ -3,25 +3,24 @@ import pool from "../db/pool.js";
 
 const router = express.Router();
 
-// GET /api/search?service=Frizer&city=Beograd
+// GET /api/search?categoryId=5&city=Beograd
 router.get("/", async (req, res) => {
-  const { service, city } = req.query;
+  const { categoryId, city } = req.query;
 
   try {
     let query = `
-      SELECT c.id, c.name, c.city
+      SELECT DISTINCT c.id, c.name, c.city
       FROM companies c
-      JOIN company_services cs ON c.id = cs.company_id
-      JOIN services s ON s.id = cs.service_id
+      LEFT JOIN company_categories cc ON cc.company_id = c.id
       WHERE 1=1
     `;
 
     const values = [];
     let idx = 1;
 
-    if (service) {
-      query += ` AND s.name ILIKE $${idx}`;
-      values.push(`%${service}%`);
+    if (categoryId) {
+      query += ` AND cc.category_id = $${idx}`;
+      values.push(parseInt(categoryId));
       idx++;
     }
 
@@ -36,7 +35,7 @@ router.get("/", async (req, res) => {
     const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (err) {
-    console.error("Error searching companies:", err);
+    console.error("Search error:", err);
     res.status(500).json({ error: "Database error" });
   }
 });
