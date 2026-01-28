@@ -1,4 +1,4 @@
-                                  Termin Direkt Platform (In Progress)
+                                 # Termin Direkt Platform (In Progress)
                                   
 
 A lightweight web application for booking appointments in service-based businesses like hair and beauty salons. Users can browse companies by category, select services and available time slots, and book them online.  
