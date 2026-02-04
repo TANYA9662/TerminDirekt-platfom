@@ -2,18 +2,17 @@ import React, { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 import { CompanyContext } from "./context/CompanyContext";
-import CategoryPage from "./pages/CategoryPage";
-
-
-
 
 import Home from "./pages/Home";
+import CategoryPage from "./pages/CategoryPage";
+import CompanyPage from "./pages/CompanyPage";
 import Dashboard from "./pages/Dashboard";
 import CompanyDashboard from "./pages/CompanyDashboard";
+
 import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
 import ResetPasswordRequest from "./components/auth/ResetPasswordRequest";
 import ResetPassword from "./components/auth/ResetPassword";
-import Register from "./components/auth/Register";
 
 import OnboardingLayout from "./components/onboarding/OnboardingLayout";
 import CompanyStep from "./components/onboarding/CompanyStep";
@@ -41,6 +40,7 @@ export default function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/category/:id" element={<CategoryPage />} />
+        <Route path="/companies/:id" element={<CompanyPage />} />
         <Route path="/reset-password-request" element={<ResetPasswordRequest />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -48,7 +48,7 @@ export default function AppRoutes() {
     );
   }
 
-  // 🏢 Firma
+  //  Firma
   if (user.role === "company") {
     const oldCompanyComplete =
       user.company &&
@@ -63,6 +63,7 @@ export default function AppRoutes() {
 
     return (
       <Routes>
+        {/* Onboarding ako firma nije kompletna */}
         {!finalCompanyComplete && (
           <Route path="/onboarding/*" element={<OnboardingGuard />}>
             <Route element={<OnboardingLayout />}>
@@ -73,13 +74,16 @@ export default function AppRoutes() {
           </Route>
         )}
 
+        {/* Firma kompletna */}
         {finalCompanyComplete && (
           <>
             <Route path="/company-dashboard" element={<CompanyDashboard />} />
             <Route path="/category/:id" element={<CategoryPage />} />
+            <Route path="/companies/:id" element={<CompanyPage />} />
           </>
         )}
 
+        {/* Redirect */}
         <Route
           path="*"
           element={
@@ -93,11 +97,12 @@ export default function AppRoutes() {
     );
   }
 
-  // 👤 Obični korisnik
+  //  Obični korisnik
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/category/:id" element={<CategoryPage />} />
+      <Route path="/companies/:id" element={<CompanyPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

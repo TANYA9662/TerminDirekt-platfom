@@ -34,6 +34,34 @@ export const CompanyProvider = ({ children }) => {
   const [companyComplete, setCompanyComplete] = useState(false);
 
   /* ================= FETCH COMPANY ================= */
+  const fetchCompany = async () => {
+    setStatus("loading");
+    try {
+      const token = localStorage.getItem("token");
+      if (token) setAuthToken(token);
+
+      const res = await API.get("/companies/me");
+      const data = res.data ?? {};
+
+      const normalized = {
+        ...emptyCompany,
+        ...data,
+        images: Array.isArray(data.images) ? data.images : [],
+        services: Array.isArray(data.services) ? data.services : [],
+        slots: Array.isArray(data.slots) ? data.slots : [],
+      };
+
+      setCompany(normalized);
+      setCompanyComplete(isCompanyComplete(normalized));
+    } catch (err) {
+      console.error("Greška pri fetchu firme:", err);
+      setCompany(emptyCompany);
+      setCompanyComplete(false);
+    } finally {
+      setStatus("ready");
+    }
+  };
+
   useEffect(() => {
     if (!user || user.role !== "company" || loading) {
       setCompany(emptyCompany);
@@ -42,60 +70,28 @@ export const CompanyProvider = ({ children }) => {
       return;
     }
 
-    const fetchCompany = async () => {
-      setStatus("loading");
-      try {
-        const token = localStorage.getItem("token");
-        if (token) setAuthToken(token);
-
-        const res = await API.get("/companies/me"); // centralni endpoint
-        const data = res.data ?? {};
-
-        const normalized = {
-          ...emptyCompany,
-          ...data,
-          images: Array.isArray(data.images) ? data.images : [],
-          services: Array.isArray(data.services) ? data.services : [],
-          slots: Array.isArray(data.slots) ? data.slots : [],
-        };
-
-        setCompany(normalized);
-        setCompanyComplete(isCompanyComplete(normalized));
-      } catch (err) {
-        console.error("Greška pri fetchu firme:", err.response?.status, err.response?.data);
-        setCompany(emptyCompany);
-        setCompanyComplete(false);
-      } finally {
-        setStatus("ready");
-      }
-    };
-
     fetchCompany();
   }, [user, loading]);
 
-  /* ================= UPDATE FUNCTIONS ================= */
+  /* ================= UPDATE COMPANY INFO ================= */
   const updateCompany = async (payload) => {
     try {
       const token = localStorage.getItem("token");
       if (token) setAuthToken(token);
 
       const id = payload.id ?? company.id;
-      const res = id
-        ? await API.put(`/companies/${id}`, payload)
-        : await API.post("/companies", payload);
+      if (!id) throw new Error("Company ID nije definisan");
 
+      const res = await API.put(`/companies/${id}`, payload);
       const data = res.data?.company ?? {};
 
       setCompany(prev => {
-        const updated = {
-          ...prev,   // nikad emptyCompany
-          ...data,   // samo šta backend vrati
-        };
+        const updated = { ...prev, ...data };
         setCompanyComplete(isCompanyComplete(updated));
         return updated;
       });
 
-      return res.data?.company;
+      return data;
     } catch (err) {
       console.error("Greška pri update firme:", err);
       throw err;
@@ -112,34 +108,43 @@ export const CompanyProvider = ({ children }) => {
   };
 
   /* ================= SERVICES ================= */
+  // ⚠️ NAMERNO NE SETUJEMO company.services
+  // Dashboard je vlasnik radnog stanja
   const updateCompanyServices = async (services) => {
-    const res = await API.put(`/companies/${company.id}/services`, { services });
+    if (!company.id) throw new Error("Company ID nije definisan");
 
-    setCompany(prev => {
-      const updated = {
-        ...prev,
-        services: res.data.services,
-      };
-      setCompanyComplete(isCompanyComplete(updated));
-      return updated;
-    });
+    try {
+      const res = await API.put(
+        `/companies/${company.id}/services`,
+        { services }
+      );
 
-    return res.data.services;
+      return res.data.services || [];
+    } catch (err) {
+      console.error("Greška pri update servisa:", err);
+      throw err;
+    }
   };
 
   /* ================= SLOTS ================= */
+  // ⚠️ NAMERNO NE SETUJEMO company.slots
   const updateCompanySlots = async (slots) => {
-    const res = await API.put(`/companies/${company.id}/slots`, { slots });
+    if (!company.id) throw new Error("Company ID nije definisan");
 
-    setCompany(prev => ({
-      ...prev,
-      slots: res.data.slots,
-    }));
+    try {
+      const res = await API.put(
+        `/companies/${company.id}/slots`,
+        { slots }
+      );
 
-    return res.data.slots;
+      return res.data.slots || [];
+    } catch (err) {
+      console.error("Greška pri update slotova:", err);
+      throw err;
+    }
   };
 
-  /* ================= SAVE EVERYTHING FUNCTION ================= */
+  /* ================= SAVE EVERYTHING (OPTIONAL) ================= */
   const saveCompanyData = async ({ name, description, services, slots }) => {
     const updatedCompany = await updateCompany({
       id: company.id,
@@ -153,17 +158,18 @@ export const CompanyProvider = ({ children }) => {
     return { updatedCompany, updatedServices, updatedSlots };
   };
 
-  /* ================= CONTEXT PROVIDER ================= */
+  /* ================= PROVIDER ================= */
   return (
     <CompanyContext.Provider
       value={{
         company,
         status,
         companyComplete,
+        fetchCompany,
         updateCompany,
         updateCompanyServices,
         updateCompanySlots,
-        setCompanyImages, // nova funkcija za direktno setovanje slika
+        setCompanyImages,
         saveCompanyData,
         setCompany,
       }}

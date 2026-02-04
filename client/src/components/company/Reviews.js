@@ -1,85 +1,113 @@
 import React, { useState } from "react";
 import API from "../../api";
 
-const Reviews = ({ reviews = [], companyId, onNewReview }) => {
-  const [form, setForm] = useState({ rating: 5, text: "" });
+const Reviews = ({
+  reviews = [],
+  companyId,
+  canReview = false,
+  averageRating = null,
+  onNewReview,
+}) => {
+  const [form, setForm] = useState({ rating: 5, comment: "" });
+  const [loading, setLoading] = useState(false);
 
   const submitReview = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await API.post(`/companies/${companyId}/reviews`, form);
-      setForm({ rating: 5, text: "" });
+      setForm({ rating: 5, comment: "" });
       onNewReview && onNewReview();
     } catch (err) {
       console.error(err);
-      alert("Greška pri dodavanju recenzije");
+      alert("Ne možete ostaviti recenziju");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="space-y-6">
+      {/* Prosečna ocena */}
+      {averageRating && (
+        <div className="text-lg font-semibold text-textDark">
+          ⭐ {averageRating.toFixed(1)} / 5
+        </div>
+      )}
+
+      {/* Lista recenzija */}
       <div className="space-y-3">
         {reviews.length === 0 ? (
           <div className="text-sm text-muted">Nema recenzija.</div>
         ) : (
           reviews.map((r) => (
-            <div
-              key={r.id}
-              className="bg-white p-4 rounded-xl shadow-sm"
-            >
+            <div key={r.id} className="bg-white p-4 rounded-xl shadow-sm">
               <div className="flex justify-between items-center">
                 <div className="font-medium text-textDark">
-                  {r.author_name || "Gost"}
+                  {r.author_name || "Korisnik"}
                 </div>
                 <div className="text-accent font-semibold">
                   {r.rating}★
                 </div>
               </div>
-              <p className="text-sm text-textLight mt-1">{r.text}</p>
+              <p className="text-sm text-textLight mt-1">
+                {r.comment}
+              </p>
             </div>
           ))
         )}
       </div>
 
-      <form
-        onSubmit={submitReview}
-        className="bg-gray-200 p-4 rounded-2xl shadow space-y-3"
-      >
-        <h4 className="font-semibold text-textDark">Dodaj recenziju</h4>
-
-        <select
-          value={form.rating}
-          onChange={(e) =>
-            setForm({ ...form, rating: e.target.value })
-          }
-          className="w-full bg-white border border-gray-300 px-3 py-2 rounded-xl"
+      {/* Forma */}
+      {canReview ? (
+        <form
+          onSubmit={submitReview}
+          className="bg-gray-200 p-4 rounded-2xl shadow space-y-3"
         >
-          {[5, 4, 3, 2, 1].map((n) => (
-            <option key={n} value={n}>
-              {n}★
-            </option>
-          ))}
-        </select>
+          <h4 className="font-semibold text-textDark">
+            Dodaj recenziju
+          </h4>
 
-        <textarea
-          value={form.text}
-          onChange={(e) =>
-            setForm({ ...form, text: e.target.value })
-          }
-          rows={3}
-          className="w-full bg-white border border-gray-300 px-3 py-2 rounded-xl"
-          placeholder="Napiši recenziju..."
-        />
+          <select
+            value={form.rating}
+            onChange={(e) =>
+              setForm({ ...form, rating: Number(e.target.value) })
+            }
+            className="w-full bg-white border border-gray-300 px-3 py-2 rounded-xl"
+          >
+            {[5, 4, 3, 2, 1].map((n) => (
+              <option key={n} value={n}>
+                {n}★
+              </option>
+            ))}
+          </select>
 
-        <div className="flex justify-end">
-          <button className="bg-accent text-cardBg px-5 py-2 rounded-xl hover:bg-accentLight transition">
-            Pošalji
-          </button>
+          <textarea
+            value={form.comment}
+            onChange={(e) =>
+              setForm({ ...form, comment: e.target.value })
+            }
+            rows={3}
+            className="w-full bg-white border border-gray-300 px-3 py-2 rounded-xl"
+            placeholder="Napiši recenziju..."
+          />
+
+          <div className="flex justify-end">
+            <button
+              disabled={loading}
+              className="bg-accent text-cardBg px-5 py-2 rounded-xl hover:bg-accentLight transition disabled:opacity-50"
+            >
+              Pošalji
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="text-sm text-muted">
+          Recenziju mogu ostaviti samo korisnici koji su imali termin.
         </div>
-      </form>
+      )}
     </div>
   );
 };
-
 
 export default Reviews;

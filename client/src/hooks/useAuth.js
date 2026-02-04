@@ -1,4 +1,4 @@
-// src/hooks/useAuth.js
+// hooks/useAuth.js
 import { useState, useEffect } from "react";
 import API, { setAuthToken } from "../api";
 
@@ -19,10 +19,21 @@ export default function useAuth() {
     const fetchUser = async () => {
       try {
         const res = await API.get("/auth/me");
-        setUser(res.data);
-        setIsCompany(!!res.data.company); // true ako ima firmu
+        let currentUser = res.data;
+
+        // ako je company, fetch company details
+        if (currentUser.role === "company") {
+          const companyRes = await API.get(`/companies/user/${currentUser.id}/details`);
+          currentUser = { ...currentUser, company: companyRes.data };
+        }
+
+        setUser(currentUser);
+        setIsCompany(currentUser.role === "company");
       } catch (err) {
         console.error(err);
+        localStorage.removeItem("token");
+        setUser(null);
+        setIsCompany(false);
       } finally {
         setLoading(false);
       }
@@ -31,5 +42,5 @@ export default function useAuth() {
     fetchUser();
   }, []);
 
-  return { user, loading, isCompany };
+  return { user, setUser, loading, isCompany };
 }

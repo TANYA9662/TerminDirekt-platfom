@@ -1,122 +1,174 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import CompanyCardCategory from "../components/home/CompanyCardCategory"; // promenjeno ovde
+import React, { useEffect, useState, useContext, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import CompanyCardCategory from "../components/home/CompanyCardCategory";
+import BookingModal from "../components/modals/BookingModal";
+import { AuthContext } from "../context/AuthContext";
+import API from "../api";
+
+const normalizeCompanies = (data) => {
+  return (data || []).map(company => {
+    // --- SERVICES ---
+    let services = [];
+    if (Array.isArray(company.services)) {
+      services = company.services;
+    } else if (typeof company.services === "string") {
+      try { services = JSON.parse(company.services); } catch { services = []; }
+    }
+
+    // --- SLOTS ---
+    const slots = Array.isArray(company.slots)
+      ? company.slots.map(slot => ({
+        ...slot,
+        service_id: Number(slot.service_id),
+        is_booked: !!slot.is_booked,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+      }))
+      : [];
+
+    // --- IMAGES ---
+    const images = Array.isArray(company.images) && company.images.length > 0
+      ? company.images.map(img => ({
+        ...img,
+        url: img.url || `/uploads/companies/${img.image_path}`,
+      }))
+      : [{ image_path: "default.png", url: `/uploads/companies/default.png` }];
+
+    return {
+      ...company,
+      services,
+      slots,
+      images,
+    };
+  });
+};
 
 const CategoryPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+
   const [category, setCategory] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
-  const [servicesFilter, setServicesFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Dohvatanje kategorije i firmi sa detaljima (services + slots + images)
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const catRes = await fetch(`/api/categories/${id}`);
-        if (!catRes.ok) throw new Error("Kategorija nije pronađena");
-        const catData = await catRes.json();
-        setCategory(catData);
+  const fetchCompanies = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Fetch category info
+      const catRes = await API.get(`/categories/${id}`);
+      setCategory(catRes.data);
 
-        const compRes = await fetch(`/api/categories/${id}/companies/details`);
-        if (!compRes.ok) throw new Error("Ne mogu da učitam firme");
-        const compData = await compRes.json();
-        setCompanies(compData);
-      } catch (err) {
-        console.error(err);
-        setCategory(null);
-        setCompanies([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+      // Fetch companies with details
+      delete API.defaults.headers.common["Authorization"];
+      const compRes = await API.get(`/categories/${id}/companies/details`);
+      const normalized = normalizeCompanies(compRes.data);
+
+      setCompanies(normalized);
+      setFilteredCompanies(normalized);
+    } catch (err) {
+      console.error("CategoryPage fetchCompanies error:", err);
+      setCompanies([]);
+      setFilteredCompanies([]);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  // Filter po nazivu usluge
   useEffect(() => {
-    if (!servicesFilter) {
-      setFilteredCompanies(companies);
-    } else {
-      const filtered = companies.filter(c =>
-        c.services?.some(s =>
-          s.name.toLowerCase().includes(servicesFilter.toLowerCase())
-        )
-      );
-      setFilteredCompanies(filtered);
-    }
-  }, [servicesFilter, companies]);
+    fetchCompanies();
+  }, [fetchCompanies]);
 
-  if (loading) return <p className="p-6">Učitavanje kategorije...</p>;
-  if (!category) return <p className="p-6">Kategorija nije pronađena</p>;
+  // Search filter
+  useEffect(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return setFilteredCompanies(companies);
 
-  const handleBooking = async ({ companyId, service, slot }) => {
+    setFilteredCompanies(
+      companies.filter(
+        (c) =>
+          c.name?.toLowerCase().includes(q) ||
+          c.services?.some(s => (s.name || "").toLowerCase().includes(q))
+      )
+    );
+  }, [search, companies]);
+
+  const handleBooking = async ({ serviceId, service, slotId }) => {
     const token = localStorage.getItem("token");
-
     if (!token) {
-      alert("Niste ulogovani!");
+      alert("Morate biti ulogovani");
       return;
     }
 
     try {
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          companyId,
-          service: service.name,
-          slotId: slot.id,
-        }),
-      });
+      await API.post(
+        "/bookings",
+        { companyId: selectedCompany.id, service, slotId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Booking error:", data);
-        alert(`Greška: ${data.message}`);
-      } else {
-        console.log("Rezervacija uspešna:", data);
-        alert("Termin uspešno zakazan!");
-
-        // fetchCategoryCompanies(); // npr. ponovo pozvati fetch
-      }
+      alert("Termin uspešno zakazan!");
+      setBookingOpen(false);
+      setSelectedCompany(null);
+      fetchCompanies();
     } catch (err) {
       console.error("Booking error:", err);
-      alert("Došlo je do greške prilikom zakazivanja termina.");
+      alert("Greška pri rezervaciji termina");
     }
   };
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <h1 className="text-3xl font-bold mb-6">{category.name}</h1>
+  if (loading) return <p className="p-6">Učitavanje...</p>;
+  if (!category) return <p className="p-6">Kategorija nije pronađena</p>;
 
-      {/* Filter po uslugama */}
-      <div className="mb-6">
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <h1 className="text-3xl font-bold mb-6">{category.name}</h1>
+
         <input
           type="text"
           placeholder="Pretraži po usluzi..."
-          value={servicesFilter}
-          onChange={(e) => setServicesFilter(e.target.value)}
-          className="w-full md:w-1/3 p-2 border rounded"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-6 w-full md:w-1/3 p-2 border rounded"
         />
+
+        {filteredCompanies.length === 0 ? (
+          <p>Nema firmi za ovu kategoriju.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {filteredCompanies.map(company => (
+              <CompanyCardCategory
+                key={company.id}
+                company={company}
+                onBook={() => {
+                  if (!user) navigate("/login");
+                  else if (user.role !== "user") alert("Samo korisnici mogu rezervisati");
+                  else {
+                    setSelectedCompany(company);
+                    setBookingOpen(true);
+                  }
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {filteredCompanies.length === 0 ? (
-        <p>Nema firmi koje odgovaraju filteru.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCompanies.map((company) => (
-            <CompanyCardCategory
-              key={company.id}
-              company={company}
-              onBook={handleBooking}
-            />
-          ))}
-        </div>
+      {/* Booking Modal */}
+      {bookingOpen && selectedCompany && user?.role === "user" && (
+        <BookingModal
+          company={selectedCompany}
+          onClose={() => {
+            setSelectedCompany(null);
+            setBookingOpen(false);
+          }}
+          onSubmit={handleBooking}
+        />
       )}
     </div>
   );

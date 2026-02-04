@@ -1,42 +1,69 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { CompanyContext } from "../../context/CompanyContext";
+import API from "../../api"; // za učitavanje kategorija
 
 export default function ServicesStep() {
   const { currentStepIndex, steps } = useOutletContext();
-  const { company, updateCompanyServices } = useContext(CompanyContext);
+  const { company, updateCompanyServices, setCompanyServices } = useContext(CompanyContext);
   const navigate = useNavigate();
 
-  const [services, setServices] = useState(Array.isArray(company?.services) ? company.services : []);
+  const [services, setServices] = useState(() => { return Array.isArray(company?.services) ? [...company.services] : []; });
+  const [categories, setCategories] = useState([]);
   const [newServiceName, setNewServiceName] = useState("");
   const [newServicePrice, setNewServicePrice] = useState("");
+  const [newServiceCategory, setNewServiceCategory] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ---- Učitavanje kategorija ----
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await API.get("/categories");
+        setCategories(Array.isArray(res.data) ? res.data : res.data.categories || []);
+      } catch (err) {
+        console.error("Greška pri učitavanju kategorija:", err);
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // ---- Dodaj servis sa tempId i izabranom kategorijom ----
   const handleAddService = () => {
-    if (!newServiceName.trim()) {
-      alert("Unesite naziv usluge");
+    if (!newServiceName.trim() || !newServiceCategory) {
+      alert("Unesite naziv i kategoriju usluge");
       return;
     }
 
     const price = newServicePrice ? Number(newServicePrice) : 0;
-    setServices([...services, { name: newServiceName, price }]);
+    const tempId = `temp-${Date.now()}`;
+
+    setServices([
+      ...services,
+      { tempId, name: newServiceName.trim(), price, category_id: Number(newServiceCategory) }
+    ]);
     setNewServiceName("");
     setNewServicePrice("");
+    setNewServiceCategory("");
   };
 
-  const handleRemoveService = (idx) => {
-    setServices(services.filter((_, i) => i !== idx));
-  };
-
+  // ---- Izmeni servis u listi ----
   const handleChangeService = (idx, field, value) => {
     const updated = [...services];
     updated[idx][field] = field === "price" ? Number(value) : value;
     setServices(updated);
   };
 
+  // ---- Obriši servis iz liste ----
+  const handleRemoveService = (idx) => {
+    setServices(services.filter((_, i) => i !== idx));
+  };
+
+  // ---- Sačuvaj servise, update CompanyContext i navigacija ----
   const handleNext = async () => {
-    if (!services || services.length === 0) {
+    if (!services.length) {
       setError("Molimo dodajte bar jednu uslugu.");
       return;
     }
@@ -45,16 +72,41 @@ export default function ServicesStep() {
     setError("");
 
     try {
-      await updateCompanyServices(company.id, services);
+      // Priprema payload-a za backend
+      const payload = services.map(s => ({
+        ...(s.id ? { id: s.id } : {}),
+        tempId: s.tempId,
+        name: s.name,
+        price: Number(s.price),
+        category_id: Number(s.category_id) || 1,
+      }));
+
+      // Update servisa preko context funkcije
+      const updatedServices = await updateCompanyServices(payload);
+
+      // Napravi mapu tempId → id
+      const tempIdMap = {};
+      updatedServices.forEach(s => {
+        if (s.tempId && !s.id) return; // safety check
+        if (s.tempId) tempIdMap[s.tempId] = s.id;
+      });
+
+      // Merge servisa u Context
+      const mergedServices = [
+        ...company.services.filter(s => !updatedServices.some(us => us.id === s.id)),
+        ...updatedServices
+      ];
+
+      if (setCompanyServices) setCompanyServices(mergedServices);
+
       navigate("/company-dashboard");
     } catch (err) {
-      console.error(err);
+      console.error("Greška pri čuvanju usluga:", err);
       setError("Greška pri čuvanju usluga.");
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleBack = () => navigate(`/onboarding/${steps[currentStepIndex - 1]}`);
 
@@ -66,7 +118,7 @@ export default function ServicesStep() {
       {/* Lista postojećih usluga */}
       <ul className="space-y-2">
         {services.map((srv, idx) => (
-          <li key={idx} className="flex gap-2 items-center">
+          <li key={srv.id ?? srv.tempId ?? idx} className="flex gap-2 items-center">
             <input
               type="text"
               value={srv.name}
@@ -105,6 +157,16 @@ export default function ServicesStep() {
           onChange={(e) => setNewServicePrice(e.target.value)}
           className="border bg-gray-100 px-2 py-1 rounded-lg w-32 focus:outline-none focus:ring-2 focus:ring-red-600"
         />
+        <select
+          value={newServiceCategory}
+          onChange={(e) => setNewServiceCategory(e.target.value)}
+          className="border bg-gray-100 px-2 py-1 rounded-lg w-48 focus:outline-none focus:ring-2 focus:ring-red-600"
+        >
+          <option value="">Izaberite kategoriju</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
         <button
           onClick={handleAddService}
           disabled={loading}

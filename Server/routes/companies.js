@@ -14,6 +14,7 @@ router.get("/user/:id", companyController.getCompanyByUser); // guest može da v
 router.get("/:id/images", companyController.getCompanyImages); // guest može da vidi
 router.get("/:id/slots", authenticateToken, companyController.getCompanySlots); // auth only
 router.get("/user/:id/details", companyController.getCompanyByUserWithDetails); // guest-friendly
+router.get("/:id/details", companyController.getCompanyByIdWithDetails);
 
 /* ===== AUTH ===== */
 router.get("/me", authenticateToken, companyController.getMyCompany);

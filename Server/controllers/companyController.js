@@ -111,7 +111,8 @@ export const getAllCompanies = async (req, res, next) => {
 
 export const getAllCompaniesForUsers = async (_, res) => {
   try {
-    const companiesRes = await pool.query('SELECT * FROM companies ORDER BY id DESC');
+    // 1️⃣ Povuci firme iz VIEW-a koji već ima avg_rating i review_count
+    const companiesRes = await pool.query('SELECT * FROM companies_with_ratings ORDER BY id DESC');
     const companies = [];
 
     for (const company of companiesRes.rows) {
@@ -132,7 +133,7 @@ export const getAllCompaniesForUsers = async (_, res) => {
         url: `/uploads/companies/${img.image_path}`
       }));
 
-      // ✅ SLOTS (KLJUČNO)
+      // slots
       const slotsRes = await pool.query(
         `SELECT *
          FROM slots
@@ -145,14 +146,16 @@ export const getAllCompaniesForUsers = async (_, res) => {
       const slots = slotsRes.rows.map(slot => ({
         ...slot,
         start_time: slot.start_time.toISOString(),
-        end_time: slot.end_time.toISOString()
+        end_time: slot.end_time?.toISOString() || null
       }));
 
       companies.push({
         ...company,
         services,
         images,
-        slots
+        slots,
+        avg_rating: Number(company.avg_rating) || 0,   // Dodaj u payload
+        review_count: Number(company.review_count) || 0 // Dodaj u payload
       });
     }
 
@@ -189,18 +192,28 @@ const getMyCompany = async (req, res) => {
       [company.id]
     );
 
+    // services
     let services = company.services;
     if (typeof services === 'string') {
-      try {
-        services = JSON.parse(services);
-      } catch {
-        services = [];
-      }
+      try { services = JSON.parse(services); } catch { services = []; }
     }
+
+    // ✅ SLOTS (DODATO)
+    const slotsRes = await pool.query(
+      `SELECT * FROM slots WHERE company_id=$1 ORDER BY start_time ASC`,
+      [company.id]
+    );
+
+    const slots = slotsRes.rows.map(slot => ({
+      ...slot,
+      start_time: slot.start_time.toISOString(),
+      end_time: slot.end_time.toISOString()
+    }));
 
     res.json({
       ...company,
       services,
+      slots,
       images: imagesRes.rows.map(img => ({
         ...img,
         url: `/uploads/companies/${img.image_path}`
@@ -214,6 +227,41 @@ const getMyCompany = async (req, res) => {
     });
   }
 };
+export const getCompanyByIdWithDetails = async (req, res) => {
+  const companyId = parseInt(req.params.id);
+  if (isNaN(companyId)) return res.status(400).json({ message: "Nevažeći ID firme" });
+
+  try {
+    const companyRes = await pool.query('SELECT * FROM companies WHERE id=$1', [companyId]);
+    const company = companyRes.rows[0];
+    if (!company) return res.status(404).json({ message: "Firma nije pronađena" });
+
+    // services
+    let services = company.services;
+    if (typeof services === 'string') {
+      try { services = JSON.parse(services); } catch { services = []; }
+    }
+
+    // images
+    const imagesRes = await pool.query('SELECT id, image_path FROM company_images WHERE company_id=$1', [company.id]);
+    const images = imagesRes.rows.map(img => ({ ...img, url: `/uploads/companies/${img.image_path}` }));
+
+    // slots
+    const slotsRes = await pool.query('SELECT * FROM slots WHERE company_id=$1 ORDER BY start_time ASC', [company.id]);
+    const slots = slotsRes.rows.map(slot => ({
+      ...slot,
+      start_time: slot.start_time.toISOString(),
+      end_time: slot.end_time.toISOString()
+    }));
+
+    res.json({ ...company, services, images, slots });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Greška pri dohvaćanju firme" });
+  }
+};
+
+
 
 export const getCompanyByUserWithDetails = async (req, res) => {
   const userId = Number(req.params.id);
@@ -471,54 +519,55 @@ const updateCompany = async (req, res) => {
 };
 
 export const updateCompanyServices = async (req, res) => {
-  const companyId = parseInt(req.params.id);
-  console.log("Request body for updating services:", req.body);
-  console.log("Authenticated user:", req.user);
+  const companyId = Number(req.params.id);
+  let { services } = req.body;
 
-  let services = req.body.services;
-
-  // Ako nije prosleđeno, postavi na prazan niz
-  if (!services) services = [];
-
-  // Ako je broj ili string → pretvori u niz sa jednim objektom
-  if (typeof services === "number" || typeof services === "string") {
-    services = [{ id: null, name: req.body.name || "Usluga", price: Number(req.body.price) || 0 }];
-  }
-
-  // Ako je objekat → stavi u niz
   if (!Array.isArray(services)) {
-    services = [services];
+    return res.status(400).json({ message: "services mora biti niz" });
   }
 
   try {
+    for (const s of services) {
+      if (!s.category_id) {
+        throw new Error(`Service ${s.name} nema category_id`);
+      }
+    }
+
     const savedServices = [];
 
-    for (let s of services) {
-      // Novi servis
+    for (const s of services) {
       if (!s.id) {
-        const newService = await pool.query(
-          'INSERT INTO services (company_id, name, price, duration) VALUES ($1,$2,$3,$4) RETURNING *',
-          [companyId, s.name, s.price, s.duration ?? 60]
+        const result = await pool.query(
+          `INSERT INTO services (company_id, name, price, duration, category_id)
+           VALUES ($1,$2,$3,$4,$5)
+           RETURNING *`,
+          [companyId, s.name, s.price, s.duration ?? 60, s.category_id]
         );
-        savedServices.push({ ...newService.rows[0], tempId: s.tempId });
+
+        savedServices.push({
+          ...result.rows[0],
+          tempId: s.tempId,
+        });
       } else {
-        // Postojeći servis → samo dodaj u odgovor
         savedServices.push(s);
       }
     }
 
-    // Sačuvaj u koloni companies
     await pool.query(
-      'UPDATE companies SET services=$1 WHERE id=$2',
+      "UPDATE companies SET services=$1 WHERE id=$2",
       [JSON.stringify(savedServices), companyId]
     );
 
     res.json({ services: savedServices });
   } catch (err) {
     console.error("updateCompanyServices error:", err);
-    res.status(500).json({ message: "Greška pri update-u servisa", error: err.message });
+    res.status(500).json({
+      message: "Greška pri update-u servisa",
+      error: err.message,
+    });
   }
 };
+
 /* ================== DELETE ================== */
 const deleteCompany = async (req, res) => {
   const id = Number(req.params.id);
@@ -609,9 +658,6 @@ export const saveSlotsHandler = async (req, res) => {
   const companyId = parseInt(req.params.id);
   const slots = req.body.slots;
 
-  console.log("saveSlotsHandler input:", { companyId, slots }); // <<< LOG INPUTA
-  console.log("Authenticated user:", req.user);                 // <<< LOG USERA
-
   if (isNaN(companyId)) return res.status(400).json({ message: "Nevažeći ID firme" });
   if (!Array.isArray(slots)) return res.status(400).json({ message: "slots mora biti niz" });
 
@@ -620,13 +666,14 @@ export const saveSlotsHandler = async (req, res) => {
 
     for (const slot of slots) {
       let { id, service_id, start_time, end_time } = slot;
-      console.log("processing slot:", slot); // <<< LOG SVAKOG SLOT-A
 
       if (!service_id || !start_time || !end_time) continue;
 
       const start = new Date(start_time);
       const end = new Date(end_time);
-      if (isNaN(start) || isNaN(end)) continue;
+
+      // ⚠ Validacija datuma i logike
+      if (isNaN(start) || isNaN(end) || end <= start) continue;
 
       start_time = start.toISOString();
       end_time = end.toISOString();
@@ -641,25 +688,23 @@ export const saveSlotsHandler = async (req, res) => {
           [companyId, service_id, start_time, end_time]
         );
         savedSlots.push(result.rows[0]);
-        continue;
+      } else {
+        const numericId = BigInt(id);
+        const result = await pool.query(
+          `UPDATE slots
+           SET service_id=$1, start_time=$2, end_time=$3
+           WHERE id=$4 AND company_id=$5
+           RETURNING id, company_id, service_id, start_time, end_time, is_booked`,
+          [service_id, start_time, end_time, numericId.toString(), companyId]
+        );
+
+        if (result.rows.length) savedSlots.push(result.rows[0]);
       }
-
-      const numericId = BigInt(id);
-      const result = await pool.query(
-        `UPDATE slots
-         SET service_id=$1, start_time=$2, end_time=$3
-         WHERE id=$4 AND company_id=$5
-         RETURNING id, company_id, service_id, start_time, end_time, is_booked`,
-        [service_id, start_time, end_time, numericId.toString(), companyId]
-      );
-
-      if (result.rows.length) savedSlots.push(result.rows[0]);
     }
 
-    console.log("Saved slots:", savedSlots);  // <<< LOG SPREMNJENIH SLOTOVA
     res.json({ slots: savedSlots });
   } catch (err) {
-    console.error("saveSlotsHandler error:", err); // <<< LOG GREŠKE
+    console.error("saveSlotsHandler error:", err);
     res.status(500).json({ message: "Greška pri čuvanju termina", error: err.message });
   }
 };
@@ -688,6 +733,7 @@ export default {
   getAllCompanies,
   getAllCompaniesForUsers,
   getCompanyByUser,
+  getCompanyByIdWithDetails,
   getCompanyByUserWithDetails,
   getCompanyImages,
   getMyCompany,

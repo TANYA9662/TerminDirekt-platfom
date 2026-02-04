@@ -77,7 +77,7 @@ export const getCompaniesByCategory = async (req, res) => {
   }
 };
 
-// GET /api/categories/:id/companies/details
+// GET /api/companies/user-view
 export const getCompaniesByCategoryWithDetails = async (req, res) => {
   const categoryId = parseInt(req.params.id);
   if (isNaN(categoryId)) return res.status(400).json({ message: "Nevažeći categoryId" });

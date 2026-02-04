@@ -111,4 +111,35 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: 'Greška pri prijavi' });
   }
 };
+export const updateUser = async (req, res) => {
+  const { name, email, phone, city } = req.body;
+  const userId = req.user?.id;
+
+  if (!userId) return res.status(401).json({ message: "Nije autentifikovan" });
+
+  try {
+    const result = await pool.query(
+      `UPDATE users 
+       SET name = COALESCE($1, name), 
+           email = COALESCE($2, email), 
+           phone = COALESCE($3, phone)
+       WHERE id = $4
+       RETURNING id, name, email, role, phone`,
+      [name, email, phone, userId]
+    );
+
+    // Ako je user firma, update u companies tabeli
+    if (req.user.role === 'company' && city) {
+      await pool.query(
+        `UPDATE companies SET city=$1 WHERE user_id=$2`,
+        [city, userId]
+      );
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Greška pri update profila:", err);
+    res.status(500).json({ message: "Greška pri ažuriranju profila" });
+  }
+};
 

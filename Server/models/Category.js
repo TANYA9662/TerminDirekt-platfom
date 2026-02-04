@@ -59,10 +59,21 @@ export const getCompaniesByCategory = async (categoryId) => {
 export const getCompaniesByCategoryWithDetails = async (categoryId) => {
   const res = await pool.query(
     `
-    SELECT
-  c.id, c.name, c.city, c.description,
-  COALESCE(
-    json_agg(DISTINCT jsonb_build_object(
+ SELECT
+  c.id,
+  c.name,
+  c.city,
+  c.description,
+  COALESCE(s.services, '[]') AS services,
+  COALESCE(img.images, '[]') AS images,
+  COALESCE(r.avg_rating, 0) AS avg_rating,
+  COALESCE(r.review_count, 0) AS review_count
+FROM companies c
+JOIN company_categories cc ON cc.company_id = c.id
+-- services
+LEFT JOIN LATERAL (
+  SELECT json_agg(
+    jsonb_build_object(
       'id', s.id,
       'name', s.name,
       'price', s.price,
@@ -77,25 +88,40 @@ export const getCompaniesByCategoryWithDetails = async (categoryId) => {
         FROM slots sl
         WHERE sl.service_id = s.id
       )
-    )) FILTER (WHERE s.id IS NOT NULL),
-    '[]'
-  ) AS services,
-  COALESCE(
-    json_agg(DISTINCT jsonb_build_object(
+    )
+  ) AS services
+  FROM services s
+  WHERE s.company_id = c.id
+) s ON TRUE
+-- images
+LEFT JOIN LATERAL (
+  SELECT json_agg(
+    jsonb_build_object(
       'id', img.id,
       'url', '/uploads/companies/' || img.image_path
-    )) FILTER (WHERE img.id IS NOT NULL),
-    '[]'
+    )
   ) AS images
-FROM companies c
-JOIN company_categories cc ON cc.company_id = c.id
-LEFT JOIN services s ON s.company_id = c.id
-LEFT JOIN company_images img ON img.company_id = c.id
+  FROM company_images img
+  WHERE img.company_id = c.id
+) img ON TRUE
+-- ratings
+LEFT JOIN LATERAL (
+  SELECT
+    AVG(r.rating)::numeric(2,1) AS avg_rating,
+    COUNT(r.id) AS review_count
+  FROM reviews r
+  WHERE r.company_id = c.id
+) r ON TRUE
 WHERE cc.category_id = $1
-GROUP BY c.id
 ORDER BY c.name ASC;
+
+
+
     `,
     [categoryId]
   );
+
   return res.rows;
 };
+
+

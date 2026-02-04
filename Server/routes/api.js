@@ -7,11 +7,11 @@ import categoriesRoutes from './categories.js';
 import providersRoutes from './providers.js';
 import searchRoutes from './search.js';
 import servicesRoutes from './services.js';
-
+import reviewRoutes from './reviews.js'; // ✅ samo jednom
 
 const router = express.Router();
 
-// Samo postojeće rute
+// Rute
 router.use('/auth', authRoutes);
 router.use('/companies', companyRoutes);
 router.use('/bookings', bookingsRoutes);
@@ -20,5 +20,6 @@ router.use('/categories', categoriesRoutes);
 router.use('/providers', providersRoutes);
 router.use('/search', searchRoutes);
 router.use('/services', servicesRoutes);
+router.use("/reviews", reviewRoutes); // ✅ koristi router.use
 
 export default router;

@@ -4,20 +4,54 @@ import express from "express";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import pool from "../db/pool.js";
+
+import { registerUser, loginUser, updateUser } from "../controllers/authController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
-import { registerUser, loginUser } from "../controllers/authController.js";
+import uploadAvatar from "../middlewares/uploadAvatar.js";
 
 dotenv.config();
 const router = express.Router();
 
-// ================= REGISTER & LOGIN =================
+// ================= REGISTER / LOGIN =================
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 
-// ================= CURRENT USER =================
-router.get("/me", authenticateToken, (req, res) => {
-  res.json(req.user);
+// ================= UPDATE PROFILE =================
+router.put("/me", authenticateToken, updateUser);
+
+// ================= CURRENT USER (BITNO!) =================
+router.get("/me", authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, email, phone, role, avatar 
+       FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: "Greška pri učitavanju korisnika" });
+  }
 });
+
+// ================= AVATAR UPLOAD =================
+router.put(
+  "/avatar",
+  authenticateToken,
+  uploadAvatar.single("avatar"),
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "Slika nije poslata" });
+    }
+
+    await pool.query(
+      "UPDATE users SET avatar=$1 WHERE id=$2",
+      [req.file.filename, req.user.id]
+    );
+
+    res.json({ avatar: req.file.filename });
+  }
+);
 
 // ================= EMAIL TRANSPORT =================
 const transporter = nodemailer.createTransport({
@@ -40,7 +74,7 @@ router.post("/reset-password-request", async (req, res) => {
       [email]
     );
 
-    if (userResult.rows.length === 0) {
+    if (!userResult.rows.length) {
       return res.json({ message: "Ako email postoji, link je poslat." });
     }
 
@@ -62,7 +96,7 @@ router.post("/reset-password-request", async (req, res) => {
     });
 
     res.json({ message: "Link za reset je poslat." });
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Greška na serveru." });
   }
 });
@@ -70,14 +104,12 @@ router.post("/reset-password-request", async (req, res) => {
 // ================= RESET PASSWORD =================
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
-  console.log("Reset-password payload:", req.body); // <-- Dodaj ovo
 
   try {
     const r = await pool.query(
       "SELECT id, reset_token_expires FROM users WHERE reset_token=$1",
       [token]
     );
-    console.log("DB result:", r.rows);
 
     if (!r.rows.length) {
       return res.status(400).json({ message: "Neispravan token." });
@@ -88,7 +120,6 @@ router.post("/reset-password", async (req, res) => {
     }
 
     const hash = await bcrypt.hash(newPassword, 10);
-    console.log("New password hash:", hash);
 
     await pool.query(
       "UPDATE users SET password=$1, reset_token=NULL, reset_token_expires=NULL WHERE id=$2",
@@ -96,8 +127,7 @@ router.post("/reset-password", async (req, res) => {
     );
 
     res.json({ message: "Lozinka je promenjena." });
-  } catch (err) {
-    console.error("Error in reset-password:", err); // <-- Dodaj ovo
+  } catch {
     res.status(500).json({ message: "Greška na serveru." });
   }
 });

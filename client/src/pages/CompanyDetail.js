@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api";
 import ServiceList from "../components/company/ServiceList";
-import BookingModal from "../components/company/BookingModal";
+import BookingModal from "../components/modals/BookingModal";
 import Reviews from "../components/company/Reviews";
 import HeroCompany from "../components/company/HeroCompany";
 import CompanyImages from "../components/company/CompanyImages";

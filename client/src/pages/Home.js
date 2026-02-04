@@ -6,10 +6,11 @@ import BookingModal from "../components/modals/BookingModal";
 import { AuthContext } from "../context/AuthContext";
 import { getImageUrl } from "../utils/imageUtils";
 import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const normalizeCity = (value) => value?.trim().toLowerCase();
 
-// Normalizacija firmi
 const normalizeCompanies = (data) => {
   return (data || []).map((company) => {
     let services = [];
@@ -50,9 +51,7 @@ const Home = () => {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        // Guest i običan korisnik: fetch bez tokena
         delete API.defaults.headers.common["Authorization"];
-
         const { data } = await API.get("/companies/user-view");
         const normalized = normalizeCompanies(data);
 
@@ -65,7 +64,6 @@ const Home = () => {
         setLoading(false);
       }
     };
-
     fetchCompanies();
   }, [user]);
 
@@ -81,104 +79,63 @@ const Home = () => {
 
   const handleBooking = async ({ service, slotId }) => {
     try {
-      const token = localStorage.getItem("token"); // token iz localStorage
+      const token = localStorage.getItem("token");
       if (!token) {
-        alert("Morate biti ulogovani da biste zakazali termin");
+        toast.error("Morate biti ulogovani da biste zakazali termin");
         return;
       }
-
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
 
       await API.post("/bookings", {
         companyId: selectedCompany.id,
         service,
         slotId,
-      }, config);
+      }, { headers: { Authorization: `Bearer ${token}` } });
 
-      alert("Termin uspešno zakazan!");
+      toast.success("Rezervacija uspešno kreirana!", { position: "top-right", autoClose: 3000 });
       setSelectedCompany(null);
-      navigate("/dashboard");
     } catch (err) {
       console.error(err);
-      alert("Greška pri zakazivanju termina");
+      toast.error("Greška pri kreiranju rezervacije", { theme: "colored" });
     }
   };
 
-
-  if (loading)
-    return (
-      <div className="flex justify-center items-center min-h-screen text-gray-900 bg-gray-300">
-        Učitavanje...
-      </div>
-    );
+  if (loading) return <div className="flex justify-center items-center min-h-screen text-gray-900 bg-gray-300">Učitavanje...</div>;
 
   return (
     <div className="min-h-screen bg-gray-100 text-textDark">
-      <Hero
-        search={search}
-        setSearch={setSearch}
-        city={city}
-        setCity={setCity}
-        cities={cities}
-      />
+      <Hero search={search} setSearch={setSearch} city={city} setCity={setCity} cities={cities} />
 
       <div className="max-w-7xl mx-auto px-4 -mt-4 relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
-          {filteredCompanies.length > 0 ? (
-            filteredCompanies.map((company) => (
-              <CompanyCard
-                key={company.id}
-                company={company}
-                onBook={() => {
-                  if (!user) {
-                    // Guest -> odmah otvoriti login prompt
-                    setSelectedCompany({ ...company, guestBooking: true });
-                  } else if (user.role !== "user") {
-                    // Firma -> ne može da bookuje
-                    alert("Samo obični korisnici mogu da rezervišu termine");
-                  } else {
-                    // Obični korisnik -> booking modal
-                    setSelectedCompany(company);
-                  }
-                }}
-              />
-            ))
-          ) : (
-            <p className="col-span-full text-center text-gray-400">
-              Nema firmi za prikaz
-            </p>
-          )}
+          {filteredCompanies.length > 0 ? filteredCompanies.map((company) => (
+            <CompanyCard
+              key={company.id}
+              company={company}
+              onBook={() => {
+                if (!user) setSelectedCompany({ ...company, guestBooking: true });
+                else if (user.role !== "user") alert("Samo obični korisnici mogu da rezervišu termine");
+                else setSelectedCompany(company);
+              }}
+            />
+          )) : <p className="col-span-full text-center text-gray-400">Nema firmi za prikaz</p>}
         </div>
       </div>
 
-      {/* Booking modal */}
-      {selectedCompany && user && user.role === "user" ? (
-        <BookingModal
-          company={selectedCompany}
-          onClose={() => setSelectedCompany(null)}
-          onSubmit={handleBooking}
-        />
-      ) : selectedCompany && (!user || selectedCompany.guestBooking) ? (
+      {selectedCompany && user?.role === "user" && (
+        <BookingModal company={selectedCompany} onClose={() => setSelectedCompany(null)} onSubmit={handleBooking} />
+      )}
+
+      {selectedCompany && (!user || selectedCompany.guestBooking) && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
           <div className="bg-white p-6 rounded-xl">
             <p className="mb-4">Molimo ulogujte se da biste rezervisali termin.</p>
-            <button
-              onClick={() => navigate("/login")}
-              className="bg-accent px-4 py-2 rounded-lg text-white"
-            >
-              Ulogujte se
-            </button>
-            <button
-              onClick={() => setSelectedCompany(null)}
-              className="ml-2 px-4 py-2 rounded-lg bg-gray-300"
-            >
-              Otkaži
-            </button>
+            <button onClick={() => navigate("/login")} className="bg-accent px-4 py-2 rounded-lg text-white">Ulogujte se</button>
+            <button onClick={() => setSelectedCompany(null)} className="ml-2 px-4 py-2 rounded-lg bg-gray-300">Otkaži</button>
           </div>
         </div>
-      ) : null}
+      )}
+
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
     </div>
   );
 };
