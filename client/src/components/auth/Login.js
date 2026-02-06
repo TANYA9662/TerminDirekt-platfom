@@ -89,7 +89,7 @@ const Login = () => {
             className="w-full p-3 border border-gray-400 shadow-2xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80"
           />
 
-          {/* Link za zaboravljenu lozinku */}
+          {/* Link reset password */}
           <div className="text-right">
             <button
               type="button"

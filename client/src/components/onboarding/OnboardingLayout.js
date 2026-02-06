@@ -10,7 +10,7 @@ export default function OnboardingLayout() {
   const navigate = useNavigate();
   const { company, status, companyComplete } = useContext(CompanyContext);
 
-  // 🔒 Zaključavanje onboarding-a ako je firma završila
+  //  Locking onboarding if company is finish
   useEffect(() => {
     if (status !== "ready") return;
     if (companyComplete && location.pathname.startsWith("/onboarding")) {
@@ -18,7 +18,7 @@ export default function OnboardingLayout() {
     }
   }, [companyComplete, status, location.pathname, navigate]);
 
-  // Ako se još učitava ili company nije postavljen, prikaži loading
+  // If loading or company not yet finish show loading
   if (status === "loading" || !company) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white bg-gray-200">
@@ -27,13 +27,13 @@ export default function OnboardingLayout() {
     );
   }
 
-  // Sigurno uzmi vrednosti iz company (fallback na prazne vrednosti)
+  // Take value from company (fallback on empty value)
   const nameSafe = company?.name ?? "";
   const descriptionSafe = company?.description ?? "";
   const imagesSafe = Array.isArray(company?.images) ? company.images : [];
   const servicesSafe = Array.isArray(company?.services) ? company.services : [];
 
-  // Odredi trenutni step onboarding-a
+  // Make step onboarding
   let currentStepIndex = 0;
   if (!nameSafe.trim() || !descriptionSafe.trim()) currentStepIndex = 0;
   else if (imagesSafe.length === 0) currentStepIndex = 1;

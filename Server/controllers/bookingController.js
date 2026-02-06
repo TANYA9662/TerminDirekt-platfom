@@ -2,7 +2,7 @@ import pool from '../db/pool.js';
 import * as Booking from '../models/Booking.js';
 
 // ====================== ADMIN ======================
-// GET /api/bookings (svi booking-ovi)
+// GET /api/bookings (all bookings)
 export const getAllBookings = async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
@@ -16,7 +16,7 @@ export const getAllBookings = async (req, res) => {
 };
 
 // ====================== KORISNIK ======================
-// GET rezervacije ulogovanog korisnika
+// GET rezervation logging user
 export const getMyBookings = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -40,7 +40,7 @@ export const getMyBookings = async (req, res) => {
 };
 
 // ====================== FIRMA ======================
-// GET rezervacije firme ulogovanog korisnika
+// GET rezervation company logging user
 export const getMyCompanyBookings = async (req, res) => {
   try {
     if (req.user.role !== 'company' && req.user.role !== 'admin')
@@ -91,7 +91,7 @@ export const getBookingById = async (req, res) => {
 
     const booking = r.rows[0];
 
-    // Samo vlasnik ili admin može videti
+    // Just owner or admin can see it
     const companyId = await getCompanyId(req.user.id);
     if (req.user.role !== 'admin' &&
       booking.company_id !== companyId &&
@@ -122,7 +122,7 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ message: "companyId, service i slotId su obavezni" });
     }
 
-    // 1️⃣ Provera da li firma postoji
+    // Check if company existing
     const companyRes = await client.query('SELECT * FROM companies WHERE id=$1', [companyId]);
     if (!companyRes.rows.length) {
       await client.query('ROLLBACK');
@@ -131,7 +131,7 @@ export const createBooking = async (req, res) => {
 
     const company = companyRes.rows[0];
 
-    // 2️⃣ Provera da li firma ima ovu uslugu
+    // Check if comany have this service
     let services = company.services;
     if (typeof services === 'string') services = JSON.parse(services);
     const serviceExists = services.find((s) => s.name === service);
@@ -140,7 +140,7 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ message: "Ne postoji ta usluga kod firme" });
     }
 
-    // 3️⃣ Zaključaj slot i proveri da li je slobodan
+    // Lock slot and check if use
     const slotRes = await client.query(
       'SELECT is_booked FROM slots WHERE id=$1 FOR UPDATE',
       [slotId]
@@ -156,7 +156,7 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ message: "Termin je već zauzet" });
     }
 
-    // 4️⃣ Kreiranje booking-a
+    // Create booking
     const bookingRes = await client.query(
       `INSERT INTO bookings (user_id, company_id, service, slot_id, status)
        VALUES ($1,$2,$3,$4,'pending')
@@ -164,7 +164,7 @@ export const createBooking = async (req, res) => {
       [userId, companyId, service, slotId]
     );
 
-    // 5️⃣ Obeleži slot kao zauzet
+    // Make slot as booked
     await client.query('UPDATE slots SET is_booked = true WHERE id=$1', [slotId]);
 
     await client.query('COMMIT');
@@ -231,7 +231,7 @@ export const deleteBooking = async (req, res) => {
 
     const booking = bookingRes.rows[0];
 
-    // Provera prava (admin ili firma)
+    // Check rights (admin or company)
     const companyId = await getCompanyId(req.user.id);
 
     const isAdmin = req.user.role === 'admin';
@@ -246,7 +246,7 @@ export const deleteBooking = async (req, res) => {
     // DELETE booking
     await client.query('DELETE FROM bookings WHERE id=$1', [bookingId]);
 
-    // Oslobodi slot
+    // Release slot
     await client.query('UPDATE slots SET is_booked = false WHERE id=$1', [booking.slot_id]);
 
     await client.query('COMMIT');
@@ -261,7 +261,7 @@ export const deleteBooking = async (req, res) => {
   }
 };
 
-// ====================== POMOĆNE FUNKCIJE ======================
+// ====================== HELP FUNCTION ======================
 const getCompanyId = async (userId) => {
   const res = await pool.query('SELECT id FROM companies WHERE user_id=$1', [userId]);
   return res.rows.length ? res.rows[0].id : null;

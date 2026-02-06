@@ -73,70 +73,75 @@ export default function ImagesStep() {
   const handleBack = () => navigate(`/onboarding/${steps[currentStepIndex - 1]}`);
 
   return (
-    <div className="min-h-screen bg-gray-200 p-6 flex flex-col justify-center max-w-md mx-auto space-y-4 rounded-2xl shadow">
-      <h3 className="text-xl font-semibold text-gray-800">Dodajte slike</h3>
-      {error && <div className="text-red-600">{error}</div>}
+    <div className="min-h-screen bg-gray-200 py-10">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="bg-white p-6 rounded-3xl shadow-md space-y-6">
+          <h3 className="text-2xl font-semibold text-gray-800">Dodajte slike</h3>
+          {error && <div className="text-red-600">{error}</div>}
 
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleFiles}
-        disabled={loading}
-        className="w-full px-3 py-2 rounded-lg bg-gray-200 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-600"
-      />
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFiles}
+            disabled={loading}
+            className="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-600"
+          />
 
-      <div className="flex flex-wrap gap-2">
-        {uploadedImages.map((img, idx) => (
-          <div key={`uploaded-${idx}`} className="relative">
-            <img
-              src={`http://localhost:3001${img.image_path}`}
-              alt={`Company ${idx}`}
-              className="w-24 h-24 object-cover rounded-lg shadow"
-            />
+          <div className="flex gap-4 overflow-x-auto py-2">
+            {uploadedImages.map((img, idx) => (
+              <div key={`uploaded-${idx}`} className="relative w-32 h-32 flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
+                <img
+                  src={`http://localhost:3001${img.image_path}`}
+                  alt={`Company ${idx}`}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemove(idx, true)}
+                  className="absolute top-2 right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-700"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {localFiles.map((img, idx) => (
+              <div key={`local-${idx}`} className="relative w-32 h-32 flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
+                <img
+                  src={img.preview}
+                  alt={`Company ${idx}`}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemove(idx, false)}
+                  className="absolute top-2 right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-700"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-between mt-6">
             <button
-              type="button"
-              onClick={() => handleRemove(idx, true)}
-              className="absolute top-0 right-0 w-5 h-5 bg-red-600 text-white rounded-full hover:bg-red-700 flex items-center justify-center text-xs"
+              onClick={handleBack}
+              disabled={loading}
+              className="px-6 py-2 bg-gray-400 text-white rounded-xl hover:bg-gray-500 transition"
             >
-              ×
+              Nazad
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={loading}
+              className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
+            >
+              {loading ? "Čuvanje..." : "Dalje"}
             </button>
           </div>
-        ))}
-        {localFiles.map((img, idx) => (
-          <div key={`local-${idx}`} className="relative">
-            <img
-              src={img.preview}
-              alt={`Company ${idx}`}
-              className="w-24 h-24 object-cover rounded-lg shadow"
-            />
-            <button
-              type="button"
-              onClick={() => handleRemove(idx, false)}
-              className="absolute top-0 right-0 w-5 h-5 bg-red-600 text-white rounded-full hover:bg-red-700 flex items-center justify-center text-xs"
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex justify-between mt-4">
-        <button
-          onClick={handleBack}
-          disabled={loading}
-          className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition"
-        >
-          Nazad
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={loading}
-          className={`px-4 py-2 rounded-lg text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
-        >
-          {loading ? "Čuvanje..." : "Dalje"}
-        </button>
+        </div>
       </div>
     </div>
   );
+
 }

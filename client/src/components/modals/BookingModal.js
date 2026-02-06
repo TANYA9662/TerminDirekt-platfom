@@ -127,8 +127,12 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
             Otkaži
           </button>
           <button
-            onClick={() => {
+            onClick={async () => {
               if (!selectedService || !selectedSlotId) return;
+
+              // green line suxess
+              await new Promise(resolve => setTimeout(resolve, 150));
+
               onSubmit({
                 service: selectedService.name,
                 slotId: selectedSlotId,

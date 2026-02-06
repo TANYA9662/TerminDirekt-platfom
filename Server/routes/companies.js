@@ -42,18 +42,18 @@ router.post(
   async (req, res) => {
     try {
       const { name, city, categoryId, services } = req.body;
-      // services očekuje JSON string [{ name, price, duration, slots: [{ start_time, end_time }] }]
+      // services wait JSON string [{ name, price, duration, slots: [{ start_time, end_time }] }]
       const parsedServices = JSON.parse(services || "[]");
 
-      // 1️⃣ Kreiraj firmu i poveži sa kategorijom
+      // Create comany and conect with category
       const company = await createCompanyWithCategory({ name, city, categoryId });
 
-      // 2️⃣ Dodaj slike ako postoje
+      // Add image if exist
       if (req.files && req.files.length > 0) {
         await addCompanyImages(company.id, req.files);
       }
 
-      // 3️⃣ Dodaj usluge i slotove
+      // Add service and slots
       for (const s of parsedServices) {
         const service = await addServices(company.id, s.name, s.price, s.duration);
         if (s.slots && s.slots.length > 0) {

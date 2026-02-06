@@ -21,7 +21,7 @@ export default function useAuth() {
         const res = await API.get("/auth/me");
         let currentUser = res.data;
 
-        // ako je company, fetch company details
+        // if it's company, fetch company details
         if (currentUser.role === "company") {
           const companyRes = await API.get(`/companies/user/${currentUser.id}/details`);
           currentUser = { ...currentUser, company: companyRes.data };

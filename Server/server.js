@@ -20,24 +20,24 @@ app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// statički fajlovi
+// static file
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 
 
-// prosledi pool
+//  pool
 app.use((req, res, next) => {
   req.pool = pool;
   next();
 });
 
-// sve rute kroz api.js
+// all route true api.js
 app.use('/api', apiRoutes);
 
 // error middleware
 app.use(errorHandler);
 
-// test ruta
+// test route
 app.get('/', (req, res) => res.send('TerminDirekt API radi! 🚀'));
 
 app.listen(PORT, () => {

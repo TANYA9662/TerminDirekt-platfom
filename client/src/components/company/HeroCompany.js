@@ -3,22 +3,22 @@ import React from "react";
 const HeroCompany = ({ company, onBookingClick }) => {
   return (
     <div className="bg-gray-100 p-6 rounded-2xl shadow-md space-y-4">
-      {/* Naslov */}
+      {/* Title */}
       <h1 className="text-3xl font-bold text-textDark">
         {company.name}
       </h1>
 
-      {/* Grad / Adresa */}
+      {/* City / Adress */}
       <p className="text-gray-700 text-sm">
         {company.city} {company.address ? `• ${company.address}` : ""}
       </p>
 
-      {/* Opis firme */}
+      {/* description company */}
       <p className="text-textDark mt-2">
         {company.description || "Nema opisa."}
       </p>
 
-      {/* Dugme za rezervaciju */}
+      {/* button reservation */}
       <button
         onClick={onBookingClick}
         className="mt-4 w-full py-2 rounded-lg bg-accent text-white font-semibold hover:bg-accentLight transition"
@@ -50,7 +50,7 @@ const HeroCompany = ({ company, onBookingClick }) => {
         )}
       </div>
 
-      {/* Radno vreme */}
+      {/* Working time */}
       <div className="mt-3">
         <h3 className="font-semibold text-textDark">Radno vreme</h3>
         <p className="text-gray-700 mt-1">

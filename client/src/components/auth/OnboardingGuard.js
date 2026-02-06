@@ -13,10 +13,10 @@ export default function OnboardingGuard() {
 
   if (status === "loading") return <div className="p-6 text-center">Učitavanje firme...</div>;
 
-  // Ako je firma kompletna → idi na dashboard
+  // if company complete → go to dashboard
   if (companyComplete) return <Navigate to="/company-dashboard" replace />;
 
-  // Odredi sledeći onboarding korak
+  // go to next onboarding step
   let nextStep = "/onboarding/company";
   if (company?.name && company?.description && !company.images?.length) nextStep = "/onboarding/images";
   else if (company?.name && company?.description && company.images?.length && !company.services?.length)

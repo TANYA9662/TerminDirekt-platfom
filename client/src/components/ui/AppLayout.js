@@ -5,7 +5,7 @@ export default function AppLayout({ children }) {
   return (
     <>
       <Header />
-      {/* Padding-top = visina header-a, responsive opcionalno */}
+      {/* Padding-top = high header-a, responsive opcional */}
       <main className="pt-[88px] md:pt-[56px]">{children}</main>
     </>
   );

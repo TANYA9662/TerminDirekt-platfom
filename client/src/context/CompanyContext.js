@@ -108,8 +108,7 @@ export const CompanyProvider = ({ children }) => {
   };
 
   /* ================= SERVICES ================= */
-  // ⚠️ NAMERNO NE SETUJEMO company.services
-  // Dashboard je vlasnik radnog stanja
+  // Dashboard is owner working condition
   const updateCompanyServices = async (services) => {
     if (!company.id) throw new Error("Company ID nije definisan");
 
@@ -127,7 +126,7 @@ export const CompanyProvider = ({ children }) => {
   };
 
   /* ================= SLOTS ================= */
-  // ⚠️ NAMERNO NE SETUJEMO company.slots
+  // we don't set company.slots
   const updateCompanySlots = async (slots) => {
     if (!company.id) throw new Error("Company ID nije definisan");
 

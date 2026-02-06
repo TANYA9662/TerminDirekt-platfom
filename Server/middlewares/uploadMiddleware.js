@@ -2,7 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Kreiraj folder ako ne postoji
+// Create folder if don't exist
 const uploadDir = path.join(process.cwd(), 'public/uploads/companies');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 

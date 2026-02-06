@@ -24,7 +24,7 @@ const Register = () => {
     e.preventDefault();
     setError("");
 
-    // Validacija
+    // Validation
     if (!form.email.trim() || !form.password.trim()) {
       setError("Morate uneti email i lozinku");
       return;
@@ -49,7 +49,7 @@ const Register = () => {
 
       login(res.user, res.token);
 
-      // Redirect zavisi od role
+      // Redirect depence of role
       if (res.user.role === "company") {
         navigate("/onboarding/company");
       } else {

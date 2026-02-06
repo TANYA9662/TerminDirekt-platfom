@@ -28,14 +28,14 @@ const Reviews = ({
 
   return (
     <div className="space-y-6">
-      {/* Prosečna ocena */}
+      {/* average rate */}
       {averageRating && (
         <div className="text-lg font-semibold text-textDark">
           ⭐ {averageRating.toFixed(1)} / 5
         </div>
       )}
 
-      {/* Lista recenzija */}
+      {/* List recension */}
       <div className="space-y-3">
         {reviews.length === 0 ? (
           <div className="text-sm text-muted">Nema recenzija.</div>
@@ -58,7 +58,7 @@ const Reviews = ({
         )}
       </div>
 
-      {/* Forma */}
+      {/* Form */}
       {canReview ? (
         <form
           onSubmit={submitReview}

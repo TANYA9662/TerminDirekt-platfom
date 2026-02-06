@@ -70,7 +70,7 @@ const CompanyDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-white ring-1 ring-gray-300 p-6 max-w-6xl mx-auto space-y-6">
       <CompanyImages
         images={images}
         carouselIndex={carouselIndex}

@@ -261,8 +261,6 @@ export const getCompanyByIdWithDetails = async (req, res) => {
   }
 };
 
-
-
 export const getCompanyByUserWithDetails = async (req, res) => {
   const userId = Number(req.params.id);
   if (isNaN(userId)) return res.status(400).json({ message: "Nevažeći user ID" });
@@ -275,7 +273,7 @@ export const getCompanyByUserWithDetails = async (req, res) => {
     const company = companyRes.rows[0];
     if (!company) return res.status(404).json({ message: "Firma nije pronađena" });
 
-    // slike
+    // images
     const imagesRes = await pool.query(
       'SELECT id, image_path FROM company_images WHERE company_id=$1',
       [company.id]
@@ -652,7 +650,7 @@ const saveSlotsToBackend = async (companyId, slots) => {
   return savedSlots;
 };
 /**
- * Express handler za update slotova (ruta PUT /:id/slots)
+ * Express handler for update slots (route PUT /:id/slots)
  */
 export const saveSlotsHandler = async (req, res) => {
   const companyId = parseInt(req.params.id);
@@ -672,7 +670,7 @@ export const saveSlotsHandler = async (req, res) => {
       const start = new Date(start_time);
       const end = new Date(end_time);
 
-      // ⚠ Validacija datuma i logike
+      // ⚠ Validacation date i logics
       if (isNaN(start) || isNaN(end) || end <= start) continue;
 
       start_time = start.toISOString();
@@ -717,7 +715,7 @@ const deleteSlot = async (req, res) => {
     return res.status(400).json({ message: "Nevažeći ID firme ili termina" });
 
   try {
-    // opcionalno: proveri da li slot pripada kompaniji
+    // opcionalno: check if  slot belong company
     const r = await pool.query('SELECT * FROM slots WHERE id=$1 AND company_id=$2', [slotId, companyId]);
     if (!r.rows.length) return res.status(404).json({ message: "Termin nije pronađen" });
 

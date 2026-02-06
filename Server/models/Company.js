@@ -1,6 +1,6 @@
 import pool from '../db/pool.js';
 
-/* ===== Kreiranje firme sa povezivanjem na kategoriju ===== */
+/* ===== Create comany with conection with category ===== */
 export const createCompanyWithCategory = async ({ name, city, address, phone, description, images, categoryId }) => {
   // Kreiraj firmu
   const companyRes = await pool.query(
@@ -11,7 +11,7 @@ export const createCompanyWithCategory = async ({ name, city, address, phone, de
 
   const company = companyRes.rows[0];
 
-  // Poveži firmu sa kategorijom
+  // Conected company with category
   await pool.query(
     `INSERT INTO company_categories (company_id, category_id) VALUES ($1, $2)`,
     [company.id, categoryId]
@@ -20,7 +20,7 @@ export const createCompanyWithCategory = async ({ name, city, address, phone, de
   return company;
 };
 
-// Dodaj slike u company_images
+// Add images in  company_images
 export const addCompanyImages = async (companyId, files) => {
   const queries = files.map(file =>
     pool.query(
@@ -31,7 +31,7 @@ export const addCompanyImages = async (companyId, files) => {
   await Promise.all(queries);
 };
 
-// Dodaj uslugu
+// Add services
 export const addServices = async (companyId, name, price, duration) => {
   const res = await pool.query(
     `INSERT INTO services (company_id, name, price, duration) VALUES ($1, $2, $3, $4) RETURNING *`,
@@ -40,7 +40,7 @@ export const addServices = async (companyId, name, price, duration) => {
   return res.rows[0];
 };
 
-// Dodaj slotove za uslugu
+// Add slots for services
 export const addSlots = async (serviceId, slots) => {
   const queries = slots.map(slot =>
     pool.query(
@@ -52,7 +52,7 @@ export const addSlots = async (serviceId, slots) => {
 };
 
 
-/* ===== Dobavljanje firme po ID ===== */
+/* ===== Get company by  ID ===== */
 export const getCompanyById = async (id) => {
   const res = await pool.query(
     `SELECT id, name, city, address, phone, description,
@@ -63,7 +63,7 @@ export const getCompanyById = async (id) => {
   return res.rows[0];
 };
 
-/* ===== Update firme ===== */
+/* ===== Update company ===== */
 export const updateCompany = async (id, data) => {
   const fields = [];
   const values = [];
@@ -85,12 +85,12 @@ export const updateCompany = async (id, data) => {
   return res.rows[0];
 };
 
-/* ===== Brisanje firme ===== */
+/* ===== Delete company ===== */
 export const deleteCompany = async (id) => {
   await pool.query(`DELETE FROM companies WHERE id = $1`, [id]);
 };
 
-/* ===== Dobavljanje svih firmi sa filtrima ===== */
+/* ===== Get all comanies with filters ===== */
 export const getAllCompanies = async ({ search = '', city = '', limit = 20, offset = 0 }) => {
   const params = [];
   let whereClause = 'WHERE 1=1';

@@ -10,7 +10,7 @@ const RoleRoute = ({ allow, children }) => {
   try {
     const decoded = jwtDecode(token);
 
-    // Prilagodi polje koje označava ulogu; ovde proveravamo 'role' ili 'type'
+    // checking 'role' or 'type'
     const userRole = decoded.role || decoded.role;
 
     if (!allow.includes(userRole)) {

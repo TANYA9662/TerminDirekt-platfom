@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import useAuth from "../hooks/useAuth";
-import API from "../api";
 import BookingModal from "../components/modals/BookingModal";
 import CompanyCard from "../components/home/CompanyCard";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getImageUrl } from "../utils/imageUtils";
+import API from "../api";
 
 const Dashboard = () => {
   const { user, setUser, loading, isCompany } = useAuth();
@@ -23,7 +23,7 @@ const Dashboard = () => {
     phone: "",
     city: "",
   });
-
+  // ==== INIT PROFILE ====
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -104,6 +104,24 @@ const Dashboard = () => {
       toast.error("Greška pri ažuriranju profila");
     }
   };
+  const handleBooking = async ({ service, slotId }) => {
+    if (!selectedCompany) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await API.post(
+        "/bookings",
+        { companyId: selectedCompany.id, service, slotId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Termin uspešno zakazan!");
+      setModalOpen(false);
+      fetchBookings(); // refresuj liste
+    } catch (err) {
+      console.error(err);
+      toast.error("Greška pri rezervaciji termina");
+    }
+  };
 
   // ==== CANCEL BOOKING ====
   const handleCancelBooking = async (id) => {
@@ -152,7 +170,7 @@ const Dashboard = () => {
           </div>
           <button
             onClick={() => setEditOpen(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-xl"
+            className="bg-gray-600 text-white px-4 py-2 rounded-xl"
           >
             Uredi profil
           </button>
@@ -168,7 +186,7 @@ const Dashboard = () => {
               {bookings.map((b) => (
                 <div
                   key={b.id}
-                  className="bg-white p-4 rounded-2xl shadow-md flex flex-col justify-between"
+                  className="bg-white p-4 rounded-2xl bg-white ring-1 ring-gray-300 shadow-md flex flex-col justify-between"
                 >
                   <div>
                     <p className="font-medium text-gray-700">{b.company_name}</p>
@@ -262,9 +280,9 @@ const Dashboard = () => {
         <BookingModal
           company={selectedCompany}
           onClose={() => setModalOpen(false)}
+          onSubmit={handleBooking}
         />
       )}
-
       <ToastContainer />
     </div>
   );

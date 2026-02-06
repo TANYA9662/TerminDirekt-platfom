@@ -7,7 +7,6 @@ import API from "../api";
 
 const normalizeCompanies = (data) => {
   return (data || []).map(company => {
-    // --- SERVICES ---
     let services = [];
     if (Array.isArray(company.services)) {
       services = company.services;
@@ -15,7 +14,6 @@ const normalizeCompanies = (data) => {
       try { services = JSON.parse(company.services); } catch { services = []; }
     }
 
-    // --- SLOTS ---
     const slots = Array.isArray(company.slots)
       ? company.slots.map(slot => ({
         ...slot,
@@ -26,13 +24,13 @@ const normalizeCompanies = (data) => {
       }))
       : [];
 
-    // --- IMAGES ---
-    const images = Array.isArray(company.images) && company.images.length > 0
-      ? company.images.map(img => ({
-        ...img,
-        url: img.url || `/uploads/companies/${img.image_path}`,
-      }))
-      : [{ image_path: "default.png", url: `/uploads/companies/default.png` }];
+    const images =
+      Array.isArray(company.images) && company.images.length > 0
+        ? company.images.map(img => ({
+          ...img,
+          url: img.url || `/uploads/companies/${img.image_path}`,
+        }))
+        : [{ image_path: "default.png", url: `/uploads/companies/default.png` }];
 
     return {
       ...company,
@@ -56,18 +54,29 @@ const CategoryPage = () => {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Fetch companies with full details (services + slots)
   const fetchCompanies = useCallback(async () => {
     try {
       setLoading(true);
+
       // Fetch category info
       const catRes = await API.get(`/categories/${id}`);
       setCategory(catRes.data);
 
-      // Fetch companies with details
+      // Fetch all companies in category
       delete API.defaults.headers.common["Authorization"];
-      const compRes = await API.get(`/categories/${id}/companies/details`);
-      const normalized = normalizeCompanies(compRes.data);
+      const compRes = await API.get(`/categories/${id}/companies`);
+      const companiesRaw = compRes.data || [];
 
+      // Fetch full details for each company
+      const detailedCompanies = await Promise.all(
+        companiesRaw.map(async (company) => {
+          const detailRes = await API.get(`/companies/${company.id}/details`);
+          return detailRes.data;
+        })
+      );
+
+      const normalized = normalizeCompanies(detailedCompanies);
       setCompanies(normalized);
       setFilteredCompanies(normalized);
     } catch (err) {
@@ -83,7 +92,6 @@ const CategoryPage = () => {
     fetchCompanies();
   }, [fetchCompanies]);
 
-  // Search filter
   useEffect(() => {
     const q = search.trim().toLowerCase();
     if (!q) return setFilteredCompanies(companies);
@@ -92,7 +100,9 @@ const CategoryPage = () => {
       companies.filter(
         (c) =>
           c.name?.toLowerCase().includes(q) ||
-          c.services?.some(s => (s.name || "").toLowerCase().includes(q))
+          c.services?.some(s =>
+            (s.name || "").toLowerCase().includes(q)
+          )
       )
     );
   }, [search, companies]);
@@ -125,29 +135,48 @@ const CategoryPage = () => {
   if (!category) return <p className="p-6">Kategorija nije pronađena</p>;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <h1 className="text-3xl font-bold mb-6">{category.name}</h1>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+        {/* HEADER */}
+        <div className="space-y-4">
+          <h1 className="text-3xl font-semibold text-gray-800">
+            {category.name}
+          </h1>
 
-        <input
-          type="text"
-          placeholder="Pretraži po usluzi..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="mb-6 w-full md:w-1/3 p-2 border rounded"
-        />
+          <input
+            type="text"
+            placeholder="Pretraži po usluzi ili firmi..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="
+              w-full md:w-1/3
+              p-3 rounded-xl
+              ring-1 ring-gray-300
+              focus:outline-none focus:ring-2 focus:ring-indigo-500
+            "
+          />
+        </div>
 
+        {/* GRID */}
         {filteredCompanies.length === 0 ? (
-          <p>Nema firmi za ovu kategoriju.</p>
+          <p className="text-gray-500">
+            Nema firmi za ovu kategoriju.
+          </p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="
+            grid grid-cols-1
+            sm:grid-cols-2
+            lg:grid-cols-3
+            gap-6
+          ">
             {filteredCompanies.map(company => (
               <CompanyCardCategory
                 key={company.id}
                 company={company}
                 onBook={() => {
                   if (!user) navigate("/login");
-                  else if (user.role !== "user") alert("Samo korisnici mogu rezervisati");
+                  else if (user.role !== "user")
+                    alert("Samo korisnici mogu rezervisati");
                   else {
                     setSelectedCompany(company);
                     setBookingOpen(true);
@@ -159,7 +188,7 @@ const CategoryPage = () => {
         )}
       </div>
 
-      {/* Booking Modal */}
+      {/* BOOKING MODAL */}
       {bookingOpen && selectedCompany && user?.role === "user" && (
         <BookingModal
           company={selectedCompany}

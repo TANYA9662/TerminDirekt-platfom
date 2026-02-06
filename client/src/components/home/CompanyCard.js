@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getImageUrl } from "../../utils/imageUtils";
 
-/* ================= STARS KOMPONENTA ================= */
+/* ================= STARS KOMPONENTS ================= */
 const Stars = ({ rating }) => {
   if (!rating) {
     return <span className="text-sm text-gray-400">Bez recenzija</span>;
@@ -56,7 +56,7 @@ const CompanyCard = ({ company, onBook }) => {
   return (
     <div
       onClick={goToCompany}
-      className="rounded-3xl flex flex-col overflow-hidden
+      className="rounded-3xl flex flex-col bg-white ring-1 ring-gray-300 overflow-hidden
                  bg-white shadow-md
                  transition-transform duration-500 ease-in-out
                  transform hover:-translate-y-2 hover:shadow-xl cursor-pointer relative"
@@ -87,7 +87,7 @@ const CompanyCard = ({ company, onBook }) => {
           <p className="text-gray-500 text-sm">{company.city}</p>
         )}
 
-        {/* ⭐ ZVEZDICE */}
+        {/* ⭐ STARS */}
         <div className="flex items-center gap-2">
           <Stars rating={company.avg_rating} />
           {company.review_count > 0 && (

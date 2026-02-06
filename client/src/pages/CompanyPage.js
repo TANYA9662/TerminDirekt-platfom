@@ -1,9 +1,11 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import API from "../api";
 import { AuthContext } from "../context/AuthContext";
 import BookingModal from "../components/modals/BookingModal";
 import ServiceList from "../components/company/ServiceList";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CompanyPage = () => {
   const { id } = useParams();
@@ -16,32 +18,30 @@ const CompanyPage = () => {
 
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState("");
+  const [bookedSlotId, setBookedSlotId] = useState(null);
 
-  // Fetch company details
-  const fetchCompany = async () => {
+  const fetchCompany = useCallback(async () => {
     try {
       setLoading(true);
       const res = await API.get(`/companies/${id}/details`);
-
-      // NE DIRAJ slots
       setCompany(res.data);
     } catch (err) {
-      console.error("Greška pri fetchu firme:", err);
+      console.error(err);
       setCompany(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const res = await API.get(`/reviews?companyId=${id}`);
       setReviews(res.data || []);
     } catch (err) {
-      console.error("Greška pri fetchu recenzija:", err);
+      console.error(err);
       setReviews([]);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,58 +49,50 @@ const CompanyPage = () => {
       await fetchReviews();
     };
     fetchData();
-  }, [id]);
+  }, [fetchCompany, fetchReviews]);
 
   const handleBooking = async ({ service, slotId }) => {
-    if (!user) {
-      alert("Morate biti ulogovani da rezervišete termin");
-      return;
-    }
-
     try {
+      const token = localStorage.getItem("token");
+
       await API.post(
         "/bookings",
         { companyId: company.id, service, slotId },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("Termin uspešno zakazan!");
+      setBookedSlotId(slotId);
       setBookingOpen(false);
-      fetchCompany(); // refresh slotove
+
+      // 3️⃣ toast
+      toast.success("Termin uspešno zakazan!");
+
     } catch (err) {
       console.error(err);
-      alert("Greška pri rezervaciji termina");
+      toast.error("Greška pri rezervaciji termina");
     }
   };
+
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!user) {
-      alert("Morate biti ulogovani da ostavite recenziju");
+      toast.error("Morate biti ulogovani da ostavite recenziju");
       return;
     }
-
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Token nije pronađen");
-
       await API.post(
         "/reviews",
-        {
-          companyId: company.id,
-          rating: newRating,
-          comment: newComment,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { companyId: company.id, rating: newRating, comment: newComment },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setNewRating(5);
       setNewComment("");
       fetchReviews();
+      toast.success("Recenzija dodata");
     } catch (err) {
-      console.error("Greška pri dodavanju recenzije:", err);
-      alert("Greška pri dodavanju recenzije");
+      console.error(err);
+      toast.error("Greška pri dodavanju recenzije");
     }
   };
 
@@ -110,65 +102,65 @@ const CompanyPage = () => {
   const canReview = user?.role === "user";
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
       {/* HEADER */}
-      <div className="space-y-4">
-        <h1 className="text-3xl font-bold">{company.name}</h1>
-        {company.city && <p className="text-gray-500">{company.city}</p>}
-        {company.description && <p>{company.description}</p>}
+      <div className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md overflow-hidden">
+        <div className="p-6 space-y-4">
+          <h1 className="text-3xl font-semibold text-gray-800">{company.name}</h1>
+          {company.city && <p className="text-gray-500">{company.city}</p>}
+          {company.description && <p className="text-gray-600">{company.description}</p>}
+          {user?.role === "user" && company.slots?.length > 0 && (
+            <button
+              onClick={() => setBookingOpen(true)}
+              className="mt-2 px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
+            >
+              Rezerviši termin
+            </button>
+          )}
 
-        {/* IMAGES */}
+        </div>
         {company.images?.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto py-2">
+          <div className="flex gap-4 px-6 pb-6 overflow-x-auto">
             {company.images.map((img, idx) => (
               <img
                 key={idx}
                 src={img.url}
                 alt={`slika-${idx}`}
-                className="w-64 h-40 object-cover rounded-xl shadow"
+                className="w-72 h-44 object-cover rounded-2xl ring-1 ring-gray-300 shadow-sm flex-shrink-0"
               />
             ))}
           </div>
         )}
-        {/* BOOKING BUTTON */}
-        {user?.role === "user" && company.slots?.length > 0 && (
-          <button
-            onClick={() => setBookingOpen(true)}
-            className="mt-2 py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-          >
-            Rezerviši termin
-          </button>
-        )}
       </div>
+
       {/* SERVICES */}
       {company.services?.length > 0 && (
-        <div className="bg-gray-200 p-6 rounded-2xl shadow space-y-4">
-          <h2 className="text-xl font-semibold mb-3 text-textDark">
-            Usluge i cene
-          </h2>
+        <div className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-4">
+          <h2 className="text-xl font-semibold text-gray-800">Usluge i cene</h2>
           <ServiceList services={company.services} />
         </div>
       )}
 
       {/* REVIEWS */}
-      <div className="bg-gray-200 p-6 rounded-2xl shadow space-y-4">
-        <h2 className="text-2xl font-semibold mb-4">Recenzije</h2>
+      <div className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-6">
+        <h2 className="text-2xl font-semibold text-gray-800">Recenzije</h2>
         {reviews.length > 0 ? (
-          reviews.map((rev) => (
-            <div key={rev.id} className="border-b border-gray-300 py-2">
-              <p className="font-semibold">{rev.user_name || "Korisnik"}</p>
-              <p>Ocena: {rev.rating}</p>
-              {rev.comment && <p>{rev.comment}</p>}
-            </div>
-          ))
+          <div className="space-y-3">
+            {reviews.map((rev) => (
+              <div key={rev.id} className="p-4 rounded-xl bg-gray-50 ring-1 ring-gray-200">
+                <p className="font-semibold text-gray-800">{rev.user_name || "Korisnik"}</p>
+                <p className="text-sm text-gray-600">Ocena: {rev.rating}</p>
+                {rev.comment && <p className="mt-1 text-gray-700">{rev.comment}</p>}
+              </div>
+            ))}
+          </div>
         ) : (
-          <p>Nema recenzija</p>
+          <p className="text-gray-500">Nema recenzija</p>
         )}
-
         {canReview && (
-          <form onSubmit={handleReviewSubmit} className="mt-4 space-y-2">
-            <label className="block">
-              Ocena (1-5):
+          <form onSubmit={handleReviewSubmit} className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700">
+              Ocena (1–5)
               <input
                 type="number"
                 min="1"
@@ -176,36 +168,39 @@ const CompanyPage = () => {
                 value={newRating}
                 onChange={(e) => setNewRating(e.target.value)}
                 required
-                className="ml-2 p-1 border rounded"
+                className="mt-1 w-24 p-2 rounded-lg ring-1 ring-gray-300"
               />
             </label>
-            <label className="block">
-              Komentar:
+            <label className="block text-sm font-medium text-gray-700">
+              Komentar
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="w-full p-2 border rounded"
+                className="mt-1 w-full p-3 rounded-lg ring-1 ring-gray-300"
                 placeholder="Ostavite komentar"
               />
             </label>
             <button
               type="submit"
-              className="py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700"
+              className="px-5 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700"
             >
               Pošalji recenziju
             </button>
           </form>
         )}
       </div>
-
       {/* BOOKING MODAL */}
       {bookingOpen && company && (
         <BookingModal
           company={company}
+          slots={company.slots || []}
           onClose={() => setBookingOpen(false)}
           onSubmit={handleBooking}
+          bookedSlotId={bookedSlotId}
         />
       )}
+      {/* TOAST */}
+      <ToastContainer position="top-right" autoClose={3000} newestOnTop pauseOnHover />
     </div>
   );
 };

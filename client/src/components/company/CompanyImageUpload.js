@@ -17,7 +17,7 @@ const CompanyImageUpload = ({ companyId, onUploadSuccess }) => {
     const formData = new FormData();
 
     Array.from(files).forEach((file) =>
-      formData.append("images", file) // MORA "images"
+      formData.append("images", file) // must "images"
     );
 
     try {

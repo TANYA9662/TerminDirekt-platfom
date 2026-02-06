@@ -28,7 +28,7 @@ const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
           minHeight: "280px",
         }}
       >
-        {/* Tamni overlay */}
+        {/* Dark overlay */}
         <div className="absolute inset-0 bg-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-6 sm:px-12 flex flex-col justify-end items-center text-center h-full gap-10 pb-10">

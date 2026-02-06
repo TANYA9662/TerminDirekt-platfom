@@ -7,12 +7,12 @@ export const createBooking = async ({ user_id, company_id, service, slot_id, sta
   try {
     await client.query('BEGIN');
 
-    // Zaključaj slot
+    // Lock slot
     const slotRes = await client.query('SELECT is_booked FROM slots WHERE id=$1 FOR UPDATE', [slot_id]);
     if (slotRes.rowCount === 0) throw new Error('Slot ne postoji');
     if (slotRes.rows[0].is_booked) throw new Error('Termin je već zauzet');
 
-    // Kreiraj booking
+    // Create booking
     const bookingRes = await client.query(
       `INSERT INTO bookings (user_id, company_id, service, slot_id, status)
        VALUES ($1, $2, $3, $4, $5)
@@ -20,7 +20,7 @@ export const createBooking = async ({ user_id, company_id, service, slot_id, sta
       [user_id, company_id, service, slot_id, status]
     );
 
-    // Obeleži slot kao zauzet
+    // Set slots as booked
     await client.query('UPDATE slots SET is_booked = true WHERE id=$1', [slot_id]);
 
     await client.query('COMMIT');

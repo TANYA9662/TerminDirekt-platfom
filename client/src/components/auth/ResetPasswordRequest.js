@@ -16,7 +16,7 @@ const ResetPasswordRequest = () => {
     setError("");
 
     try {
-      // Poziv backend rute
+      // call backend route
       await API.post("/auth/reset-password-request", { email });
       setMessage("Proverite svoj email za link za reset lozinke.");
     } catch (err) {

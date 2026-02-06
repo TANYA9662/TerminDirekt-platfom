@@ -66,7 +66,7 @@ const Header = () => {
             ))}
           </ul>
 
-          {/* Dugmad Desktop */}
+          {/* Button Desktop */}
           <div className="hidden md:flex items-center gap-2">
             {!user ? (
               <>
@@ -100,7 +100,7 @@ const Header = () => {
               </>
             )}
           </div>
-          {/* Hamburger mobilni */}
+          {/* Hamburger mobile */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden flex flex-col justify-center items-center w-8 h-8 gap-1.5"
@@ -126,7 +126,7 @@ const Header = () => {
         onClick={() => setMenuOpen(false)}
       />
 
-      {/* Mobilni meni sa animacijom */}
+      {/* Mobile meni with animation */}
       <aside
         className={`fixed top-0 right-0 h-full w-64 bg-gray-100 shadow-2xl transform transition-transform duration-500 ease-in-out z-40 md:hidden ${menuOpen ? "translate-x-0" : "translate-x-full"
           }`}

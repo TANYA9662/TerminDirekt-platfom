@@ -1,4 +1,3 @@
-// controllers/authController.js
 import pool from '../db/pool.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -12,10 +11,10 @@ export const registerUser = async (req, res) => {
   }
 
   try {
-    // 1. Hash lozinke
+    // 1. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 2. Ubaci usera u bazu
+    // 2. Load user in database
     const result = await pool.query(
       `INSERT INTO users (name, email, password, role) 
        VALUES ($1, $2, $3, $4) RETURNING id, name, email, role`,
@@ -26,7 +25,7 @@ export const registerUser = async (req, res) => {
 
     let company = null;
 
-    // 3. Ako je user firma, kreiraj automatski zapis u companies tabeli
+    // 3. If is  user company, create automatisk in companies table
     if (role === 'company') {
       const companyResult = await pool.query(
         `INSERT INTO companies (user_id, name, city, phone) 
@@ -36,14 +35,14 @@ export const registerUser = async (req, res) => {
       company = companyResult.rows[0];
     }
 
-    // 4. Napravi token
+    // 4.Make token
     const token = jwt.sign(
       { id: user.id, role: user.role, company_id: company ? company.id : null },
       process.env.JWT_SECRET || 'tajni_kljuc',
       { expiresIn: '2h' }
     );
 
-    // 5. Vrati user + token + eventualno company
+    // 5. Get back user + token + eventual company
     res.json({ token, user, company });
   } catch (err) {
     console.error('Greška pri registraciji:', err);
@@ -76,7 +75,7 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Pogrešan email ili lozinka' });
     }
 
-    // Dohvati firmu ako je korisnik kompanija
+    // Catch company if it's user company
     let company = null;
     if (user.role === 'company') {
       const companyResult = await pool.query(
@@ -86,7 +85,7 @@ export const loginUser = async (req, res) => {
       company = companyResult.rows[0] || null;
     }
 
-    // Napravi JWT token
+    // Make JWT token
     const token = jwt.sign(
       {
         id: user.id,
@@ -128,7 +127,7 @@ export const updateUser = async (req, res) => {
       [name, email, phone, userId]
     );
 
-    // Ako je user firma, update u companies tabeli
+    // If it's user company, update in companies table
     if (req.user.role === 'company' && city) {
       await pool.query(
         `UPDATE companies SET city=$1 WHERE user_id=$2`,

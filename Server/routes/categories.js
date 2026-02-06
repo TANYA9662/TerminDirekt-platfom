@@ -3,13 +3,13 @@ import * as categoryController from '../controllers/categoryController.js';
 
 const router = express.Router();
 
-// Lista svih kategorija
+// List all categories
 router.get('/', categoryController.getAllCategories);
 
-// Jedna kategorija po ID-u
+// One category by ID
 router.get('/:id', categoryController.getCategoryById);
 
-// Sve firme u kategoriji
+// All companies in category
 router.get('/:id/companies', categoryController.getCompaniesByCategory);
 router.get("/:id/companies/details", categoryController.getCompaniesByCategoryWithDetails);
 

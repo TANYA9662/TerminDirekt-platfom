@@ -1,7 +1,7 @@
 import React from "react";
 import { getImageUrl } from "../../utils/imageUtils";
 
-/* ================= STARS KOMPONENTA ================= */
+/* ================= STARS KOMPONENT ================= */
 const Stars = ({ rating }) => {
   if (!rating) {
     return <span className="text-sm text-gray-400">Bez recenzija</span>;
@@ -23,7 +23,7 @@ const Stars = ({ rating }) => {
 
 const CompanyCardCategory = ({ company, onBook }) => {
   return (
-    <div className="rounded-3xl overflow-hidden shadow-lg bg-white">
+    <div className="rounded-3xl overflow-hidden shadow-lg bg-white ring-1 ring-gray-300">
       <img
         src={company.images?.[0]?.url || getImageUrl({ image_path: "default.png" })}
         alt={company.name}
@@ -43,7 +43,8 @@ const CompanyCardCategory = ({ company, onBook }) => {
         </div>
         <button
           onClick={() => onBook(company)}
-          className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-xl font-bold hover:bg-indigo-700"
+          className="mt-2 py-2 w-full bg-gray-100 text-gray-700 font-semibold rounded
+          hover:bg-gray-200 transition-colors duration-300"
         >
           Rezerviši
         </button>

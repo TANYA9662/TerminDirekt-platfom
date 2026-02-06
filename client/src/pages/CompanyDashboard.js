@@ -114,6 +114,7 @@ const CompanyDashboard = () => {
 
     // Dodaj u services i odmah se prikazuje u dropdown
     setServices(prev => [...prev, newService]);
+    setNewServiceId(tempId);
 
     // Reset forme i fokus na naziv
     setNewServiceName("");
@@ -149,8 +150,8 @@ const CompanyDashboard = () => {
 
     const newSlot = {
       id: `temp-${Date.now()}`,
-      service_id: service.id ?? null,        // koristi pravi id ako postoji
-      tempServiceId: service.id ? null : service.tempId,  // inače čuvaj tempId
+      service_id: service.id ?? null,           // if the is  id
+      tempServiceId: service.id ? null : service.tempId, // if notid, use tempId
       start_time: start.toISOString(),
       end_time: end.toISOString(),
       is_booked: false,
@@ -190,24 +191,24 @@ const CompanyDashboard = () => {
   const handleFinish = async () => {
     setLoading(true);
     try {
-      // 1️⃣ Ažuriraj osnovne podatke firme
+      // Update basic info company
       await updateCompany({ id: company.id, name: tempName, description: tempDescription });
 
-      // 2️⃣ Filtriraj validne servise
+      // Filtrade valid services
       const validServices = services
         .filter(s => s.name && !isNaN(s.price) && s.category_id)
         .map(s => ({ ...s, price: Number(s.price), category_id: Number(s.category_id) }));
 
-      // 3️⃣ Sačuvaj servise i dobij real ID-jeve
+      // Keep services and get real  ID
       const updatedServices = await updateCompanyServices(validServices); // backend vraća [{id, tempId, ...}]
 
-      // 4️⃣ Mapiranje tempId -> stvarni ID
+      // 4️⃣ Mapping tempId -> real ID
       const serviceIdMap = {};
       updatedServices.forEach(s => {
         if (s.tempId) serviceIdMap[s.tempId] = s.id;
       });
 
-      // 5️⃣ Merge servisa u lokalni state
+      // 5️⃣ Merge servise in local state
       const allServices = services.map(s => {
         if (s.id) return s;
         const realId = serviceIdMap[s.tempId];
@@ -215,7 +216,7 @@ const CompanyDashboard = () => {
       });
       setServices(allServices);
 
-      // 6️⃣ Popravi slotove da koriste stvarne ID-jeve
+      // Make slots to use real ID
       const slotsWithRealIds = slots
         .filter(s => !s.deleted)
         .map(slot => ({
@@ -224,7 +225,7 @@ const CompanyDashboard = () => {
           tempServiceId: undefined,
         }));
 
-      // 7️⃣ Sačuvaj slotove u backend
+      // Keep slots in  backend
       const savedSlots = await updateCompanySlots(slotsWithRealIds);
       setSlots(savedSlots);
 
@@ -270,22 +271,32 @@ const CompanyDashboard = () => {
   );
 
   const renderSlots = () => {
-    // Prikaži samo slotove koji nisu obrisani ili imaju service koji postoji
-    const visibleSlots = slots.filter(s => {
-      if (s.deleted) return false; // sakrij obrisane
-      return services.some(serv =>
+    // Filter view avialible slots 
+    const visibleSlots = slots.filter(s =>
+      !s.deleted &&
+      services.some(serv =>
         (s.service_id && String(serv.id) === String(s.service_id)) ||
         (s.tempServiceId && String(serv.tempId) === String(s.tempServiceId))
-      );
-    });
+      )
+    );
 
     if (!visibleSlots.length) return <p className="text-gray-500">Nema termina</p>;
 
-    return visibleSlots.map((s, idx) => {
+    // Sortiraj: new term (temp-) first
+    const sortedSlots = [...visibleSlots].sort((a, b) => {
+      const aTemp = a.id.startsWith("temp-");
+      const bTemp = b.id.startsWith("temp-");
+      if (aTemp && !bTemp) return -1; // novi termini na vrhu
+      if (!aTemp && bTemp) return 1;
+      return new Date(b.start_time) - new Date(a.start_time); // veći datum pre manjeg
+    });
+
+    return sortedSlots.map((s, idx) => {
       const service = services.find(serv =>
         (s.service_id && String(serv.id) === String(s.service_id)) ||
         (s.tempServiceId && String(serv.tempId) === String(s.tempServiceId))
       );
+
 
       const serviceName = service?.name || "Nepoznata usluga";
       const duration = service?.duration || 60;
@@ -294,7 +305,7 @@ const CompanyDashboard = () => {
       return (
         <div key={s.id ?? `slot-${idx}`} className="relative group">
           <div className={`p-2 border shadow-2xl text-gray-800 rounded-lg flex justify-between items-center transition-colors duration-300
-          ${s.is_booked ? "bg-red-100 border-red-400" : "bg-white border-gray-400 hover:bg-gray-100"}`}>
+        ${s.is_booked ? "bg-red-100 border-red-400" : "bg-white border-gray-400 hover:bg-gray-100"}`}>
             <span className="font-medium">
               {formatDateTime(s.start_time, s.end_time)} ({serviceName}){s.is_booked && " (rezervisan)"}
             </span>
@@ -302,7 +313,7 @@ const CompanyDashboard = () => {
               onClick={() => handleDeleteSlot(s.id)}
               disabled={s.is_booked}
               className={`px-2 py-1 rounded-lg text-black font-semibold transition-colors duration-200
-              ${s.is_booked ? "bg-gray-400 cursor-not-allowed" : "border border-gray-400 shadow-2xl text-gray-600 hover:bg-gray-600 hover:text-white"}`}
+            ${s.is_booked ? "bg-gray-400 cursor-not-allowed" : "border border-gray-400 shadow-2xl text-gray-600 hover:bg-gray-600 hover:text-white"}`}
             >
               Obriši
             </button>
@@ -314,7 +325,6 @@ const CompanyDashboard = () => {
       );
     });
   };
-
 
   const renderSlotForm = () => (
     <form onSubmit={handleAddSlot} className="flex gap-2 flex-wrap items-center mt-2">
@@ -336,22 +346,24 @@ const CompanyDashboard = () => {
   if (!company) return <div className="p-6 text-center text-gray-900">Firma nije pronađena.</div>;
 
   return (
-    <div className="min-h-screen bg-gray-200 p-4 md:p-6 text-gray-900">
+    <div className="min-h-screen bg-gray-100 p-6 text-gray-900">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* KOLUMNA 0 */}
         <div ref={colRef0} className="transition-all duration-700 ease-out space-y-6">
-          <div className="bg-cardBg p-6 rounded-2xl shadow-md space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            <h2 className="text-xl font-semibold text-textDark">Informacije o firmi</h2>
-            <input type="text" value={tempName} onChange={e => setTempName(e.target.value)} placeholder="Naziv firme" className="w-full border border-gray-400 shadow-2xl p-2 rounded-lg" />
-            <textarea value={tempDescription} onChange={e => setTempDescription(e.target.value)} placeholder="Opis firme" className="w-full border border-gray-400 shadow-2xl p-2 rounded-lg" />
+          <div className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <h2 className="text-xl font-semibold text-gray-800">Informacije o firmi</h2>
+            <input type="text" value={tempName} onChange={e => setTempName(e.target.value)} placeholder="Naziv firme" className="w-full border border-gray-300 p-2 rounded-lg" />
+            <textarea value={tempDescription} onChange={e => setTempDescription(e.target.value)} placeholder="Opis firme" className="w-full border border-gray-300 p-2 rounded-lg" />
           </div>
-          <div className="bg-cardBg p-6 border border-gray-400 shadow-2xl rounded-2xl space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative">
-            <h2 className="text-xl font-semibold text-textDark">Slike</h2>
+
+          <div className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <h2 className="text-xl font-semibold text-gray-800">Slike</h2>
             <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide relative z-10">
               {(company.images || []).map((img, idx) => (
-                <div key={img.id ?? `img-${idx}`} className="relative w-40 h-40 flex-shrink-0 group overflow-hidden rounded-lg border border-gray-400 shadow-2xl">
+                <div key={img.id ?? `img-${idx}`} className="relative w-40 h-40 flex-shrink-0 group overflow-hidden rounded-lg ring-1 ring-gray-300 shadow-md">
                   <img src={getImageUrl(img)} alt={img.alt || ""} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={e => (e.target.src = getImageUrl(null))} />
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <button onClick={() => handleDeleteImage(idx)} className="bg-gray-300 text-white px-4 py-2 rounded-xl font-semibold shadow-lg hover:bg-accentLight transition-all duration-300">Obriši</button>
+                    <button onClick={() => handleDeleteImage(idx)} className="bg-red-600 text-white px-4 py-2 rounded-xl font-semibold shadow-lg hover:bg-red-700 transition-all duration-300">Obriši</button>
                   </div>
                 </div>
               ))}
@@ -360,23 +372,26 @@ const CompanyDashboard = () => {
           </div>
         </div>
 
-        <div ref={colRef1} className="bg-cardBg border border-gray-400 shadow-2xl p-6 rounded-2xl space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-          <h2 className="text-xl font-semibold text-textDark">Usluge</h2>
+        {/* KOLUMNA 1 - Usluge */}
+        <div ref={colRef1} className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+          <h2 className="text-xl font-semibold text-gray-800">Usluge</h2>
           {renderServicesForm()}
           {renderServicesList()}
         </div>
 
-        <div ref={colRef2} className="bg-cardBg border border-gray-400 shadow-2xl p-6 rounded-2xl space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-          <h2 className="text-xl font-semibold text-textDark">Termini</h2>
+        {/* KOLUMNA 2 - Termini */}
+        <div ref={colRef2} className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+          <h2 className="text-xl font-semibold text-gray-800">Termini</h2>
           {renderSlots()}
           {renderSlotForm()}
         </div>
       </div>
 
       <div className="mt-6">
-        <button onClick={handleFinish} className="border border-gray-400 shadow-2xl text-black font-semibold px-10 py-2 rounded-lg hover:bg-gray-600 transition">Sačuvaj sve izmene</button>
+        <button onClick={handleFinish} className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-2 rounded-3xl shadow-md transition">Sačuvaj sve izmene</button>
       </div>
     </div>
+
   );
 };
 
