@@ -1,18 +1,19 @@
 // CompanyDashboard.js
 import React, { useState, useContext, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+//import { useNavigate } from "react-router-dom";
 import { CompanyContext } from "../context/CompanyContext";
 import CompanyImageUpload from "../components/company/CompanyImageUpload";
+//import { mapCompanyImages } from "../utils/imageUtils";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getImageUrl } from "../utils/imageUtils";
 import API from "../api";
 
 const CompanyDashboard = () => {
-  const { company, updateCompany, updateCompanyServices, updateCompanySlots, setCompanyImages } =
+  const { company, setCompany, updateCompany, updateCompanyServices, updateCompanySlots, setCompanyImages } =
     useContext(CompanyContext);
 
-  const navigate = useNavigate();
+
+  //const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [tempName, setTempName] = useState("");
@@ -76,7 +77,13 @@ const CompanyDashboard = () => {
   }, []);
 
   // ---- Image handlers ----
-  const handleUploadSuccess = (imagesFromDb) => setCompanyImages(imagesFromDb);
+  /*const handleUploadSuccess = (newImages) => {
+    const mapped = mapCompanyImages(newImages);
+    setCompany(prev => ({
+      ...prev,
+      images: [...(prev.images || []), ...mapped],
+    }));
+  };*/
 
   const handleDeleteImage = async (index) => {
     if (!window.confirm("Obrisati sliku?")) return;
@@ -361,14 +368,18 @@ const CompanyDashboard = () => {
             <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide relative z-10">
               {(company.images || []).map((img, idx) => (
                 <div key={img.id ?? `img-${idx}`} className="relative w-40 h-40 flex-shrink-0 group overflow-hidden rounded-lg ring-1 ring-gray-300 shadow-md">
-                  <img src={getImageUrl(img)} alt={img.alt || ""} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={e => (e.target.src = getImageUrl(null))} />
+                  <img src={img.url} alt={company.name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={e => (e.target.src = "/uploads/companies/default.png")}
+                  />
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                     <button onClick={() => handleDeleteImage(idx)} className="bg-red-600 text-white px-4 py-2 rounded-xl font-semibold shadow-lg hover:bg-red-700 transition-all duration-300">Obriši</button>
                   </div>
                 </div>
               ))}
+
             </div>
-            <CompanyImageUpload companyId={company.id} onUploadSuccess={handleUploadSuccess} />
+            <CompanyImageUpload companyId={company.id} company={company} setCompany={setCompany} />
           </div>
         </div>
 

@@ -4,7 +4,6 @@ import Hero from "../components/home/Hero";
 import CompanyCard from "../components/home/CompanyCard";
 import BookingModal from "../components/modals/BookingModal";
 import { AuthContext } from "../context/AuthContext";
-import { getImageUrl } from "../utils/imageUtils";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -29,9 +28,10 @@ const normalizeCompanies = (data) => {
       }))
       : [];
 
-    const images = Array.isArray(company.images) && company.images.length > 0
-      ? company.images.map(img => ({ ...img, url: getImageUrl(img) }))
-      : [{ image_path: "default.png", url: getImageUrl({ image_path: "default.png" }) }];
+    const images =
+      Array.isArray(company.images) && company.images.length > 0
+        ? company.images
+        : [{ id: "default", url: "/uploads/companies/default.png", isDefault: true }];
 
     return { ...company, services, slots, images };
   });

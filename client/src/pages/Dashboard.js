@@ -4,7 +4,7 @@ import BookingModal from "../components/modals/BookingModal";
 import CompanyCard from "../components/home/CompanyCard";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getImageUrl } from "../utils/imageUtils";
+//import { mapCompanyImages, getUserAvatar } from "../utils/imageUtils";
 import API from "../api";
 
 const Dashboard = () => {
@@ -14,7 +14,6 @@ const Dashboard = () => {
   const [companies, setCompanies] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState(null);
 
   const [editOpen, setEditOpen] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -38,8 +37,6 @@ const Dashboard = () => {
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    setAvatarPreview(URL.createObjectURL(file));
 
     const formData = new FormData();
     formData.append("avatar", file);
@@ -68,19 +65,19 @@ const Dashboard = () => {
       toast.error("Greška pri učitavanju rezervacija");
     }
   };
-
   const fetchCompanies = async () => {
     try {
       const res = await API.get("/companies/user-view");
-      const data = (res.data || []).map((c) => ({
+
+      const data = (res.data || []).map(c => ({
         ...c,
-        images:
-          c.images?.length > 0
-            ? c.images.map((i) => ({ ...i, url: getImageUrl(i) }))
-            : [{ url: getImageUrl(null) }],
+        images: Array.isArray(c.images) && c.images.length > 0
+          ? c.images
+          : [],
         services: c.services || [],
         slots: c.slots || [],
       }));
+
       setCompanies(data);
     } catch {
       toast.error("Greška pri učitavanju firmi");
@@ -150,13 +147,7 @@ const Dashboard = () => {
           <div className="flex gap-4 items-center">
             <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
               <img
-                src={
-                  avatarPreview
-                    ? avatarPreview
-                    : user?.avatar
-                      ? `http://localhost:3001/uploads/avatars/${user.avatar}`
-                      : "/default-avatar.png"
-                }
+                src={user?.avatar}
                 alt="avatar"
                 className="w-full h-full object-cover"
               />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getImageUrl } from "../../utils/imageUtils";
+
 
 /* ================= STARS KOMPONENTS ================= */
 const Stars = ({ rating }) => {
@@ -27,10 +27,7 @@ const CompanyCard = ({ company, onBook }) => {
   const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(0);
 
-  const safeImages =
-    Array.isArray(company.images) && company.images.length > 0
-      ? company.images.map(img => img.url)
-      : [getImageUrl({ image_path: "default.png" })];
+  const safeImages = company.images.map(img => img.url);
 
   useEffect(() => setCurrentImage(0), [company.id]);
 
@@ -64,11 +61,8 @@ const CompanyCard = ({ company, onBook }) => {
       <div className="relative w-full aspect-video overflow-hidden">
         <img
           src={safeImages[currentImage]}
-          alt={company.name || "Company image"}
+          alt={company.name}
           className="w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-105"
-          onError={(e) =>
-            (e.target.src = getImageUrl({ image_path: "default.png" }))
-          }
         />
 
         <div className="absolute bottom-0 left-0 w-full h-1

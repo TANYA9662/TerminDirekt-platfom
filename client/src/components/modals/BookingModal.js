@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { getImageUrl } from "../../utils/imageUtils";
+
 
 const BookingModal = ({ company, onClose, onSubmit }) => {
   const [selectedServiceId, setSelectedServiceId] = useState(null);
@@ -31,10 +31,7 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
 
   if (!company) return null;
 
-  const images =
-    company.images?.length > 0
-      ? company.images.map(img => getImageUrl(img))
-      : [getImageUrl(null)];
+  const images = company.images || [];
 
   const selectedService = company.services.find(s => Number(s.id) === Number(selectedServiceId));
 
@@ -64,17 +61,16 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
         {/* IMAGES */}
         {images.length > 0 && (
           <div className="flex gap-3 overflow-x-auto py-2">
-            {images.map((url, i) => (
+            {images.map((img, i) => (
               <img
-                key={i}
-                src={url}
+                key={img.id || i}
+                src={img.url}
                 alt={`${company.name} ${i}`}
                 className="w-32 h-32 object-cover rounded-xl shadow-sm flex-shrink-0 transition-transform duration-300 hover:scale-105 hover:shadow-lg"
               />
             ))}
           </div>
         )}
-
         {/* SERVICES AS CARDS */}
         <div className="space-y-2">
           <h3 className="font-semibold text-lg text-gray-700 border-b border-gray-200 pb-1">Usluge i cene</h3>

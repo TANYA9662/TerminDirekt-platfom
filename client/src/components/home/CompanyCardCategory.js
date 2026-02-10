@@ -1,5 +1,5 @@
 import React from "react";
-import { getImageUrl } from "../../utils/imageUtils";
+
 
 /* ================= STARS KOMPONENT ================= */
 const Stars = ({ rating }) => {
@@ -25,7 +25,7 @@ const CompanyCardCategory = ({ company, onBook }) => {
   return (
     <div className="rounded-3xl overflow-hidden shadow-lg bg-white ring-1 ring-gray-300">
       <img
-        src={company.images?.[0]?.url || getImageUrl({ image_path: "default.png" })}
+        src={company.images?.[0]?.url}
         alt={company.name}
         className="w-full h-48 object-cover"
       />

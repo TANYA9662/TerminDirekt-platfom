@@ -1,25 +1,29 @@
 import express from "express";
-import companyController, { getCompaniesByCategoryWithDetails } from "../controllers/companyController.js";
+import companyController from "../controllers/companyController.js";
 import { authenticateToken, requireRole, requireOwnerOrAdmin } from "../middlewares/authMiddleware.js";
 import upload from "../middlewares/uploadMiddleware.js";
 import { createCompanyWithCategory, addCompanyImages, addServices, addSlots } from "../models/Company.js";
 
 const router = express.Router();
 
-/* ===== PUBLIC ===== */
-router.get("/withDetails", authenticateToken, companyController.getAllCompaniesWithDetails); // auth only
-router.get("/", companyController.getAllCompanies); // lista firmi, guest-friendly
-router.get("/user-view", companyController.getAllCompaniesForUsers); // guest može da vidi
-router.get("/user/:id", companyController.getCompanyByUser); // guest može da vidi
-router.get("/:id/images", companyController.getCompanyImages); // guest može da vidi
-router.get("/:id/slots", authenticateToken, companyController.getCompanySlots); // auth only
-router.get("/user/:id/details", companyController.getCompanyByUserWithDetails); // guest-friendly
+/* ===== PUBLIC – SPECIFIC ===== */
+router.get("/categories/:id/companies/details", companyController.getCompaniesByCategoryWithDetails);
+router.get("/search", companyController.searchCompanies);
+router.get("/withDetails", authenticateToken, companyController.getAllCompaniesWithDetails);
+router.get("/user-view", companyController.getAllCompaniesForUsers);
+router.get("/user/:id/details", companyController.getCompanyByUserWithDetails);
+router.get("/user/:id", companyController.getCompanyByUser);
+
+/* ===== DINAMIC ROUTE ===== */
+router.get("/:id/images", companyController.getCompanyImages);
+router.get("/:id/slots", authenticateToken, companyController.getCompanySlots);
 router.get("/:id/details", companyController.getCompanyByIdWithDetails);
+router.get("/", companyController.getAllCompanies);
 
 /* ===== AUTH ===== */
 router.get("/me", authenticateToken, companyController.getMyCompany);
 
-/* ===== COMPANY CRUD ===== */
+/* ===== CRUD ===== */
 router.post("/", authenticateToken, requireRole("company"), upload.array("images", 10), companyController.upsertCompany);
 router.post("/:id/images", authenticateToken, requireOwnerOrAdmin, upload.array("images", 10), companyController.uploadCompanyImages);
 
@@ -31,7 +35,9 @@ router.delete("/:id", authenticateToken, requireOwnerOrAdmin, companyController.
 router.delete("/images/:imageId", authenticateToken, requireOwnerOrAdmin, companyController.deleteCompanyImage);
 router.delete("/:id/slots/:slotId", authenticateToken, requireOwnerOrAdmin, companyController.deleteSlot);
 
+
 router.get("/search", companyController.searchCompanies);
+router.get("/categories/:id/companies/details", companyController.getCompaniesByCategoryWithDetails);
 
 /* ===== NEW: FULL COMPANY CREATION ===== */
 router.post(

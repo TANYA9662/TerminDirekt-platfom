@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-const CompanyImages = ({ images, carouselIndex, prevImage, nextImage, companyName }) => {
+const CompanyImages = ({ images, companyName }) => {
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
   if (!images || images.length === 0) {
     return (
       <div className="w-full h-64 rounded-2xl bg-gray-200 flex items-center justify-center text-textLight shadow">
@@ -12,15 +13,21 @@ const CompanyImages = ({ images, carouselIndex, prevImage, nextImage, companyNam
   }
 
   const currentImage = images[carouselIndex];
-  const imgSrc = currentImage?.image_path
-    ? `${API_BASE}/uploads/companies/${currentImage.image_path}` // bez 'public/'
-    : `${API_BASE}/uploads/companies/default.png`;
+  const imgSrc = getImageUrl(currentImage); // koristi Cloudinary URL
+
+  const prevImage = () => {
+    setCarouselIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const nextImage = () => {
+    setCarouselIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
 
   return (
     <div className="relative w-full h-64 rounded-2xl overflow-hidden shadow-md bg-gray-200">
       <img
         src={imgSrc}
-        alt={companyName}
+        alt={companyName || `company-${carouselIndex}`}
         className="w-full h-full object-cover transition-transform duration-500"
       />
 
