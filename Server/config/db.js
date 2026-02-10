@@ -9,8 +9,12 @@ export const pool = new Pool({
   database: DB_NAME,
   password: DB_PASSWORD,
   port: DB_PORT,
+  ssl: {
+    require: true,
+    rejectUnauthorized: false,
+  },
 });
 
 pool.connect()
-  .then(() => console.log('PostgreSQL connected'))
+  .then(() => console.log('PostgreSQL connected (SSL)'))
   .catch((err) => console.error('DB connection error', err));
