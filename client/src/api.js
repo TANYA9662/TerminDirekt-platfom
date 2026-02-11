@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Kreiramo instancu API-ja
 const API = axios.create({
-  baseURL: "http://localhost:3001/api", // sve rute prolaze kroz /api
+  baseURL: `${process.env.REACT_APP_API_URL}/api`, // koristi env varijablu za backend
   withCredentials: true, // šalje cookie ako je potrebno
 });
 
@@ -18,12 +18,12 @@ export const setAuthToken = (token) => {
 /* ===== AUTH ===== */
 export const loginUser = async (payload) => {
   const res = await API.post("/auth/login", payload);
-  return res.data; // { user, token, company? }
+  return res.data;
 };
 
 export const registerUser = async (payload) => {
   const res = await API.post("/auth/register", payload);
-  return res.data; // { user, token, company? }
+  return res.data;
 };
 
 export const getCurrentUser = async () => {
@@ -47,25 +47,21 @@ export const getCompanyImages = async (companyId) => {
   return res.data;
 };
 
-// Dobijanje firme po korisniku (umesto /details)
 export const getCompanyByUserId = async (userId) => {
   const res = await API.get(`/companies/user/${userId}`);
   return res.data;
 };
 
-// Dobijanje moje firme (za ulogovanog korisnika)
 export const getMyCompany = async () => {
   const res = await API.get("/companies/me");
   return res.data;
 };
 
-// Update services za firmu
 export const updateCompanyServices = async (companyId, services) => {
   const res = await API.put(`/companies/${companyId}/services`, { services });
   return res.data;
 };
 
-// Upload multiple images za firmu
 export const uploadCompanyImages = async (companyId, formData) => {
   const res = await API.post(`/companies/${companyId}/images`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -73,13 +69,11 @@ export const uploadCompanyImages = async (companyId, formData) => {
   return res.data;
 };
 
-// Dobijanje slotova za firmu
 export const getCompanySlots = async (companyId) => {
   const res = await API.get(`/companies/${companyId}/slots`);
   return res.data;
 };
 
-// Save/update slotove za firmu
 export const saveCompanySlots = async (companyId, slots) => {
   const res = await API.put(`/companies/${companyId}/slots`, { slots });
   return res.data;
