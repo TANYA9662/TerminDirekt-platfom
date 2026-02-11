@@ -13,16 +13,24 @@ const Header = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("/api/categories");
-        if (!res.ok) throw new Error("Greška pri učitavanju kategorija");
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/categories`
+        );
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+
         const data = await res.json();
         setCategories(data);
       } catch (err) {
-        console.error(err);
+        console.error("Greška pri učitavanju kategorija:", err);
       }
     };
+
     fetchCategories();
   }, []);
+
 
   const handleAccountClick = () => {
     if (!user) return navigate("/login");
