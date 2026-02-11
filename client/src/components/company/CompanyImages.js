@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import { absoluteUrl } from "../../utils/imageUtils";
 
 const CompanyImages = ({ images, companyName }) => {
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -13,7 +13,7 @@ const CompanyImages = ({ images, companyName }) => {
   }
 
   const currentImage = images[carouselIndex];
-  const imgSrc = getImageUrl(currentImage); // koristi Cloudinary URL
+  const imgSrc = currentImage.url ? currentImage.url : absoluteUrl(currentImage);
 
   const prevImage = () => {
     setCarouselIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
