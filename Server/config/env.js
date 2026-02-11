@@ -43,5 +43,7 @@ export const EMAIL_HOST = process.env.EMAIL_HOST;
 export const EMAIL_PORT = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : 587;
 export const EMAIL_SECURE = process.env.EMAIL_SECURE === 'true';
 
-// Frontend URL
-export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+// Frontend URLs
+export const FRONTEND_URLS = process.env.FRONTEND_URLS
+  ? process.env.FRONTEND_URLS.split(',')
+  : ['http://localhost:3000'];
