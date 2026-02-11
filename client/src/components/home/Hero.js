@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-//import { useNavigate } from "react-router-dom";
+import { absoluteUrl } from "../../utils/imageUtils";
 import { AuthContext } from "../../context/AuthContext";
 import { CompanyContext } from "../../context/CompanyContext";
 
@@ -15,13 +15,14 @@ const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
       </section>
     );
   }
+  const heroBackground = absoluteUrl("/uploads/companies/pozadina.jpg");
 
   return (
     <section className="relative w-full flex flex-col items-center justify-center bg-gray-100 pt-[18px] pb-10">
       <div
         className="w-full relative overflow-hidden -mt-15"
         style={{
-          backgroundImage: "url('/uploads/companies/pozadina.jpg')",
+          backgroundImage: `url('${heroBackground}')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           height: "40vh",
@@ -67,7 +68,6 @@ const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
         </div>
       </div>
     </section>
-
   );
 };
 

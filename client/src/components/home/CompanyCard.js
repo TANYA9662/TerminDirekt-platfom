@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { absoluteUrl } from "../../utils/imageUtils";
+import { mapCompanyImages } from "../../utils/imageUtils";
 
-/* ================= STARS KOMPONENTS ================= */
+/* ================= STARS COMPONENT ================= */
 const Stars = ({ rating }) => {
-  if (!rating) {
-    return <span className="text-sm text-gray-400">Bez recenzija</span>;
-  }
+  if (!rating) return <span className="text-sm text-gray-400">Bez recenzija</span>;
 
   const full = Math.floor(rating);
   const half = rating % 1 >= 0.5;
@@ -27,47 +25,41 @@ const CompanyCard = ({ company, onBook }) => {
   const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(0);
 
-  // ⬅️ mapiramo stare i nove slike na pun URL
-  const safeImages = company.images.map(img =>
-    img.url ? img.url : absoluteUrl(img)
-  );
+  // ⬅️ koristimo mapCompanyImages da dobijemo sigurne full URL slike
+  const images = mapCompanyImages(company.images || []);
 
   useEffect(() => setCurrentImage(0), [company.id]);
 
   useEffect(() => {
-    safeImages.forEach(url => {
-      const img = new Image();
-      img.src = url;
+    images.forEach(img => {
+      const preload = new Image();
+      preload.src = img.url;
     });
-  }, [safeImages]);
+  }, [images]);
 
   useEffect(() => {
-    if (safeImages.length <= 1) return;
+    if (images.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentImage(prev => (prev + 1) % safeImages.length);
+      setCurrentImage(prev => (prev + 1) % images.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [safeImages.length]);
+  }, [images.length]);
 
-  const goToCompany = () => {
-    navigate(`/companies/${company.id}`);
-  };
+  const goToCompany = () => navigate(`/companies/${company.id}`);
 
   return (
     <div
       onClick={goToCompany}
       className="rounded-3xl flex flex-col bg-white ring-1 ring-gray-300 overflow-hidden
-                 bg-white shadow-md
-                 transition-transform duration-500 ease-in-out
+                 shadow-md transition-transform duration-500 ease-in-out
                  transform hover:-translate-y-2 hover:shadow-xl cursor-pointer relative"
     >
       <div className="relative w-full aspect-video overflow-hidden">
         <img
-          src={safeImages[currentImage]}
+          src={images[currentImage].url}
           alt={company.name}
           className="w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-105"
         />
-
         <div className="absolute bottom-0 left-0 w-full h-1
                         bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300
                         opacity-0 rounded-t-full
@@ -76,29 +68,18 @@ const CompanyCard = ({ company, onBook }) => {
       </div>
 
       <div className="p-4 flex flex-col gap-2 bg-white">
-        <h3 className="text-lg font-semibold truncate text-gray-700">
-          {company.name}
-        </h3>
+        <h3 className="text-lg font-semibold truncate text-gray-700">{company.name}</h3>
+        {company.city && <p className="text-gray-500 text-sm">{company.city}</p>}
 
-        {company.city && (
-          <p className="text-gray-500 text-sm">{company.city}</p>
-        )}
-
-        {/* ⭐ STARS */}
         <div className="flex items-center gap-2">
           <Stars rating={company.avg_rating} />
           {company.review_count > 0 && (
-            <span className="text-xs text-gray-400">
-              ({company.review_count})
-            </span>
+            <span className="text-xs text-gray-400">({company.review_count})</span>
           )}
         </div>
 
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onBook(company);
-          }}
+          onClick={e => { e.stopPropagation(); onBook(company); }}
           className="mt-2 py-2 w-full bg-gray-100 text-gray-700 font-semibold rounded
                      hover:bg-gray-200 transition-colors duration-300"
         >

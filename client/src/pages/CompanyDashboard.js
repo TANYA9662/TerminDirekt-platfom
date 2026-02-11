@@ -303,8 +303,6 @@ const CompanyDashboard = () => {
         (s.service_id && String(serv.id) === String(s.service_id)) ||
         (s.tempServiceId && String(serv.tempId) === String(s.tempServiceId))
       );
-
-
       const serviceName = service?.name || "Nepoznata usluga";
       const duration = service?.duration || 60;
       const bookedStatus = s.is_booked ? "Rezervisan" : "Slobodan";
@@ -377,7 +375,6 @@ const CompanyDashboard = () => {
                   </div>
                 </div>
               ))}
-
             </div>
             <CompanyImageUpload companyId={company.id} company={company} setCompany={setCompany} />
           </div>
