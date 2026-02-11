@@ -1,5 +1,5 @@
 import cloudinary from "../config/cloudinary.js";
-import pool from "../db/pool.js";
+import { pool } from '../config/db.js';
 
 export const deleteImageById = async (imageId) => {
   const id = Number(imageId);

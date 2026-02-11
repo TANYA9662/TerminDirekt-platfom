@@ -1,4 +1,4 @@
-import pool from '../db/pool.js';
+import { pool } from '../config/db.js';
 import * as Slot from '../models/Slot.js';
 
 // CREATE

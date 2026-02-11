@@ -1,4 +1,4 @@
-import pool from '../db/pool.js';
+import { pool } from '../config/db.js';
 
 // CREATE BOOKING
 export const createBooking = async ({ user_id, company_id, service, slot_id, status = 'pending' }) => {

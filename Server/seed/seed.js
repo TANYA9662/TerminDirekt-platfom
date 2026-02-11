@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import pool from '../db/pool.js';
+import { pool } from '../config/db.js';
 import * as User from '../models/User.js';
 import * as Service from '../models/Service.js';
 import * as Company from '../models/Company.js';

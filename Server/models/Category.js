@@ -1,5 +1,4 @@
-import pool from '../db/pool.js';
-
+import { pool } from '../config/db.js';
 
 export const createCategory = async ({ name }) => {
   const res = await pool.query(

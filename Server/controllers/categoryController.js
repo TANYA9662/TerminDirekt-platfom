@@ -1,6 +1,5 @@
 import * as Category from '../models/Category.js';
-import pool from '../db/pool.js';
-
+import { pool } from '../config/db.js';
 
 // GET /api/categories
 export const getAllCategories = async (req, res) => {

@@ -1,5 +1,5 @@
 import * as Provider from '../models/Provider.js';
-import pool from '../db/pool.js';
+import { pool } from '../config/db.js';
 
 // GET /api/providers
 export const getAllProviders = async (req, res) => {

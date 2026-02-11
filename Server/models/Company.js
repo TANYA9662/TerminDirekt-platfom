@@ -1,4 +1,4 @@
-import pool from '../db/pool.js';
+import { pool } from '../config/db.js';
 
 /* ===== Create comany with conection with category ===== */
 export const createCompanyWithCategory = async ({ name, city, address, phone, description, images, categoryId }) => {

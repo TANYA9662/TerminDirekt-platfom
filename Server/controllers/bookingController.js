@@ -1,4 +1,4 @@
-import pool from '../db/pool.js';
+import { pool } from '../config/db.js';
 import * as Booking from '../models/Booking.js';
 
 // ====================== ADMIN ======================

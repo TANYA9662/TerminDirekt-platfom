@@ -1,4 +1,4 @@
-import pool from '../db/pool.js';
+import { pool } from '../config/db.js';
 
 export const createProvider = async ({ name, company_id, description, city, rating }) => {
   const res = await pool.query(

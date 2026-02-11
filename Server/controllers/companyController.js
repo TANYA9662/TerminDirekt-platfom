@@ -1,7 +1,7 @@
 import cloudinary from "../config/cloudinary.js";
 import { deleteImageById } from "../utils/deleteImageById.js";
 import { buildImageUrl } from "../utils/buildImageUrl.js";
-import pool from '../db/pool.js';
+import { pool } from '../config/db.js';
 import fs from 'fs';
 import path from 'path';
 

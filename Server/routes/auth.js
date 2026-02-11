@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 import express from "express";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import pool from "../db/pool.js";
+import { pool } from '../config/db.js';
 
 import { registerUser, loginUser, updateUser } from "../controllers/authController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
