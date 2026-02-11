@@ -245,7 +245,6 @@ const CompanyDashboard = () => {
     }
   };
 
-
   // ---- Render helpers ----
   const formatDateTime = (start, end) => {
     if (!start || !end) return "Nepoznat termin";
@@ -365,18 +364,30 @@ const CompanyDashboard = () => {
             <h2 className="text-xl font-semibold text-gray-800">Slike</h2>
             <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide relative z-10">
               {(company.images || []).map((img, idx) => (
-                <div key={img.id ?? `img-${idx}`} className="relative w-40 h-40 flex-shrink-0 group overflow-hidden rounded-lg ring-1 ring-gray-300 shadow-md">
-                  <img src={absoluteUrl(img.url)} alt={company.name}
+                <div
+                  key={img.id ?? `img-${idx}`}
+                  className="relative w-40 h-40 flex-shrink-0 group overflow-hidden rounded-lg ring-1 ring-gray-300 shadow-md"
+                >
+                  <img
+                    src={absoluteUrl(img.url)}
+                    alt={company.name}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    onError={e => (e.target.src = absoluteUrl("/uploads/companies/default.png"))}
+                    onError={(e) =>
+                      (e.target.src = absoluteUrl("/uploads/companies/default.png"))
+                    }
                   />
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <button onClick={() => handleDeleteImage(idx)} className="bg-red-600 text-white px-4 py-2 rounded-xl font-semibold shadow-lg hover:bg-red-700 transition-all duration-300">Obriši</button>
+                    <button
+                      onClick={() => handleDeleteImage(idx)}
+                      className="bg-red-600 text-white px-4 py-2 rounded-xl font-semibold shadow-lg hover:bg-red-700 transition-all duration-300"
+                    >
+                      Obriši
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
-            <CompanyImageUpload companyId={company.id} company={company} setCompany={setCompany} />
+            <CompanyImageUpload companyId={company.id} company={company} setCompany={setCompany} showExistingImages={false} />
           </div>
         </div>
 

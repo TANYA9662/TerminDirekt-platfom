@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { absoluteUrl } from "../../utils/imageUtils";
 
 
 const BookingModal = ({ company, onClose, onSubmit }) => {
   const [selectedServiceId, setSelectedServiceId] = useState(null);
   const [selectedSlotId, setSelectedSlotId] = useState(null);
 
-  // 1️⃣ Memoized available slots
   const availableSlots = useMemo(() => {
     if (!company || !selectedServiceId) return [];
     return company.slots.filter(
@@ -13,12 +13,9 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
     );
   }, [company, selectedServiceId]);
 
-  // 2️⃣ Default service & slot
   useEffect(() => {
     if (!company?.services?.length) return;
-
-    const defaultServiceId = company.services[0].id;
-    setSelectedServiceId(prev => prev ?? defaultServiceId);
+    setSelectedServiceId(prev => prev ?? company.services[0].id);
   }, [company]);
 
   useEffect(() => {
@@ -32,7 +29,6 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
   if (!company) return null;
 
   const images = company.images || [];
-
   const selectedService = company.services.find(s => Number(s.id) === Number(selectedServiceId));
 
   return (
@@ -64,14 +60,16 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
             {images.map((img, i) => (
               <img
                 key={img.id || i}
-                src={img.url}
+                src={absoluteUrl(img.url)}
                 alt={`${company.name} ${i}`}
+                onError={e => (e.target.src = absoluteUrl("/uploads/companies/default.png"))} // ⬅️ fallback
                 className="w-32 h-32 object-cover rounded-xl shadow-sm flex-shrink-0 transition-transform duration-300 hover:scale-105 hover:shadow-lg"
               />
             ))}
           </div>
         )}
-        {/* SERVICES AS CARDS */}
+
+        {/* SERVICES AND SLOTS */}
         <div className="space-y-2">
           <h3 className="font-semibold text-lg text-gray-700 border-b border-gray-200 pb-1">Usluge i cene</h3>
           <div className="flex gap-3 overflow-x-auto py-2">
@@ -91,7 +89,6 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
           </div>
         </div>
 
-        {/* SLOTS AS CARDS */}
         {availableSlots.length > 0 ? (
           <div className="space-y-2">
             <h3 className="font-semibold text-lg text-gray-700">Slobodni termini</h3>
@@ -125,14 +122,8 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
           <button
             onClick={async () => {
               if (!selectedService || !selectedSlotId) return;
-
-              // green line suxess
               await new Promise(resolve => setTimeout(resolve, 150));
-
-              onSubmit({
-                service: selectedService.name,
-                slotId: selectedSlotId,
-              });
+              onSubmit({ service: selectedService.name, slotId: selectedSlotId });
             }}
             disabled={!selectedSlotId || !selectedService}
             className="px-5 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -140,6 +131,7 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
             Rezerviši
           </button>
         </div>
+
       </div>
     </div>
   );

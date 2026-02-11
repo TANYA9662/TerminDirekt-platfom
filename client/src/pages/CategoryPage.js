@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import CompanyCardCategory from "../components/home/CompanyCardCategory";
 import BookingModal from "../components/modals/BookingModal";
 import { AuthContext } from "../context/AuthContext";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import API from "../api";
 
 const normalizeCompanies = (data) => {
@@ -32,11 +34,19 @@ const normalizeCompanies = (data) => {
         }))
         : [{ image_path: "default.png", url: `/uploads/companies/default.png` }];
 
+    const reviews = Array.isArray(company.reviews) ? company.reviews : [];
+    const avg_rating = reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
+      : 0;
+
     return {
       ...company,
       services,
       slots,
       images,
+      reviews,
+      avg_rating,
+      review_count: reviews.length, // isto kao na home
     };
   });
 };
@@ -121,13 +131,14 @@ const CategoryPage = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert("Termin uspešno zakazan!");
+      // zamenjeno alert sa toast
+      toast.success("Termin uspešno zakazan!");
       setBookingOpen(false);
       setSelectedCompany(null);
       fetchCompanies();
     } catch (err) {
       console.error("Booking error:", err);
-      alert("Greška pri rezervaciji termina");
+      toast.error("Greška pri rezervaciji termina");
     }
   };
 
@@ -199,6 +210,7 @@ const CategoryPage = () => {
           onSubmit={handleBooking}
         />
       )}
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };
