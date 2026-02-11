@@ -16,10 +16,10 @@ const app = express();
 // CORS sa višestrukim origin-ima
 app.use(cors({
   origin: (origin, callback) => {
-    // Ako origin nije definisan (npr. Postman), dozvoli
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // npr. Postman
 
-    if (FRONTEND_URLS.includes(origin)) {
+    // Ako je localhost ili Vercel domen
+    if (FRONTEND_URLS.includes(origin) || origin.includes('vercel.app')) {
       return callback(null, true);
     }
 
@@ -27,6 +27,7 @@ app.use(cors({
   },
   credentials: true
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
