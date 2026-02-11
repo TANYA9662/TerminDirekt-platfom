@@ -4,7 +4,7 @@ import BookingModal from "../components/modals/BookingModal";
 import CompanyCard from "../components/home/CompanyCard";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-//import { mapCompanyImages, getUserAvatar } from "../utils/imageUtils";
+import { absoluteUrl } from "../utils/imageUtils";
 import API from "../api";
 
 const Dashboard = () => {
@@ -147,7 +147,7 @@ const Dashboard = () => {
           <div className="flex gap-4 items-center">
             <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
               <img
-                src={user?.avatar}
+                src={absoluteUrl(user?.avatar) || absoluteUrl("/uploads/avatars/default.png")}
                 alt="avatar"
                 className="w-full h-full object-cover"
               />
@@ -202,7 +202,13 @@ const Dashboard = () => {
           {companies.map((c) => (
             <CompanyCard
               key={c.id}
-              company={c}
+              company={{
+                ...c,
+                images: c.images.map(img => ({
+                  ...img,
+                  url: absoluteUrl(img.url),
+                })),
+              }}
               onBook={(co) => {
                 setSelectedCompany(co);
                 setModalOpen(true);

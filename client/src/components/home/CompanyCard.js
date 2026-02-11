@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { absoluteUrl } from "../../utils/imageUtils";
 
 /* ================= STARS KOMPONENTS ================= */
 const Stars = ({ rating }) => {
@@ -27,7 +27,10 @@ const CompanyCard = ({ company, onBook }) => {
   const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(0);
 
-  const safeImages = company.images.map(img => img.url);
+  // ⬅️ mapiramo stare i nove slike na pun URL
+  const safeImages = company.images.map(img =>
+    img.url ? img.url : absoluteUrl(img)
+  );
 
   useEffect(() => setCurrentImage(0), [company.id]);
 

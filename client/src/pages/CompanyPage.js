@@ -6,6 +6,8 @@ import BookingModal from "../components/modals/BookingModal";
 import ServiceList from "../components/company/ServiceList";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { absoluteUrl } from "../utils/imageUtils";
+
 
 const CompanyPage = () => {
   const { id } = useParams();
@@ -124,9 +126,10 @@ const CompanyPage = () => {
             {company.images.map((img, idx) => (
               <img
                 key={idx}
-                src={img.url}
+                src={absoluteUrl(img.url)}
                 alt={`slika-${idx}`}
                 className="w-72 h-44 object-cover rounded-2xl ring-1 ring-gray-300 shadow-sm flex-shrink-0"
+                onError={(e) => e.target.src = absoluteUrl("/uploads/companies/default.png")}
               />
             ))}
           </div>

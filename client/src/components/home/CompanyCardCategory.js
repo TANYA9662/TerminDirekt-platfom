@@ -1,7 +1,7 @@
 import React from "react";
+import { absoluteUrl } from "../../utils/imageUtils";
 
-
-/* ================= STARS KOMPONENT ================= */
+/* ================= STARS COMPONENT ================= */
 const Stars = ({ rating }) => {
   if (!rating) {
     return <span className="text-sm text-gray-400">Bez recenzija</span>;
@@ -21,11 +21,18 @@ const Stars = ({ rating }) => {
   );
 };
 
+/* ================= COMPANY CARD CATEGORY ================= */
 const CompanyCardCategory = ({ company, onBook }) => {
+  const imgUrl = company.images?.[0]
+    ? company.images[0].url
+      ? company.images[0].url
+      : absoluteUrl(company.images[0])
+    : absoluteUrl("/uploads/companies/default.png"); // fallback default
+
   return (
     <div className="rounded-3xl overflow-hidden shadow-lg bg-white ring-1 ring-gray-300">
       <img
-        src={company.images?.[0]?.url}
+        src={imgUrl}
         alt={company.name}
         className="w-full h-48 object-cover"
       />

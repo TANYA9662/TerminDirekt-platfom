@@ -6,6 +6,7 @@ import BookingModal from "../components/modals/BookingModal";
 import Reviews from "../components/company/Reviews";
 import HeroCompany from "../components/company/HeroCompany";
 import CompanyImages from "../components/company/CompanyImages";
+import { mapCompanyImages } from "../utils/imageUtils";
 
 const CompanyDetail = () => {
   const { id } = useParams();
@@ -32,9 +33,20 @@ const CompanyDetail = () => {
         API.get(`/companies/${id}/services`),
         API.get(`/companies/${id}/reviews`),
       ]);
+
+      // Company data
       if (cRes.status === "fulfilled") setCompany(cRes.value.data);
-      if (imgsRes.status === "fulfilled") setImages(imgsRes.value.data || []);
+
+      // Images with mapping to absolute URLs
+      if (imgsRes.status === "fulfilled") {
+        const mappedImages = mapCompanyImages(imgsRes.value.data || []);
+        setImages(mappedImages);
+      }
+
+      // Services
       if (svcRes.status === "fulfilled") setServices(svcRes.value.data || []);
+
+      // Reviews
       if (revRes.status === "fulfilled") setReviews(revRes.value.data || []);
     } finally {
       setLoading(false);
