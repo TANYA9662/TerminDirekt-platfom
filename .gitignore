@@ -22,3 +22,6 @@ yarn-error.log*
 # IDE files
 .vscode/
 .idea/
+
+# Database backups
+termin_direkt_backup.dump

@@ -13,16 +13,24 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// CORS sa višestrukim origin-ima
+// CORS middleware sa podrškom za lokalni, produkcioni i Vercel preview deploy-eve
+const allowedOrigins = Array.isArray(FRONTEND_URLS)
+  ? FRONTEND_URLS
+  : FRONTEND_URLS.split(',');
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // npr. Postman
+    if (!origin) return callback(null, true);
 
-    // Ako je localhost ili Vercel domen
-    if (FRONTEND_URLS.includes(origin) || origin.includes('vercel.app')) {
+    if (
+      allowedOrigins.includes(origin) ||
+      origin?.includes('.vercel.app')
+    ) {
+      console.log('✅ CORS allowed for:', origin);
       return callback(null, true);
     }
 
+    console.log('❌ CORS blocked for:', origin);
     callback(new Error('CORS nije dozvoljen za ovaj origin: ' + origin));
   },
   credentials: true
@@ -32,7 +40,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Pool connection dostupna za rute
+// Pool connection dostupan za rute
 app.use((req, res, next) => {
   req.pool = pool;
   next();
