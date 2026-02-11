@@ -1,10 +1,10 @@
 import React, { useContext } from "react";
-import { useNavigate } from "react-router-dom";
+//import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { CompanyContext } from "../../context/CompanyContext";
 
 const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
   const { loading: authLoading } = useContext(AuthContext);
   const { status } = useContext(CompanyContext);
 
