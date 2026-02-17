@@ -6,7 +6,7 @@ import CompanyCardCategory from "../components/home/CompanyCardCategory";
 import BookingModal from "../components/modals/BookingModal";
 import { toast, ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
-import { mapCompanyImages, DEFAULT_COMPANY_IMAGE } from "../utils/imageUtils";
+import { DEFAULT_COMPANY_IMAGE } from "../utils/imageUtils";
 
 /* ================= MULTI LANGUAGE HELPER ================= */
 const getTranslated = (field, lang) => {
@@ -106,7 +106,7 @@ const CategoryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, lang]);
 
   useEffect(() => { fetchCompanies(); }, [fetchCompanies]);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import useAuth from "../hooks/useAuth";
 import BookingModal from "../components/modals/BookingModal";
 import CompanyCard from "../components/home/CompanyCard";
@@ -66,7 +66,7 @@ const Dashboard = () => {
   };
 
   // ==== FETCH BOOKINGS ====
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -76,9 +76,9 @@ const Dashboard = () => {
       console.error(err);
       toast.error(t("dashboard.error_fetch_bookings"));
     }
-  };
+  }, [t]);
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     try {
       const res = await API.get("/companies/user-view");
 
@@ -93,14 +93,15 @@ const Dashboard = () => {
     } catch {
       toast.error(t("dashboard.error_fetch_companies"));
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     if (!loading && !isCompany) {
       fetchBookings();
       fetchCompanies();
     }
-  }, [loading, isCompany]);
+  }, [loading, isCompany, fetchBookings, fetchCompanies]);
+
 
   // ==== SAVE PROFILE ====
   const saveProfile = async () => {

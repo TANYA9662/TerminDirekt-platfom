@@ -31,7 +31,6 @@ app.use(cors({
       allowedOrigins.includes(origin) ||
       origin?.includes('.vercel.app')
     ) {
-      console.log('✅ CORS allowed for:', origin);
       return callback(null, true);
     }
 
