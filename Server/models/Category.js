@@ -15,12 +15,26 @@ export const getCategoryById = async (id) => {
 
 
 export const getAllCategories = async () => {
-  const res = await pool.query(`SELECT * FROM categories ORDER BY id ASC`);
+  const res = await pool.query(`
+    SELECT c.id, c.name,
+           jsonb_object_agg(t.lang_code, t.value) FILTER (WHERE t.value IS NOT NULL) AS translations
+    FROM categories c
+    LEFT JOIN translations t
+      ON t.table_name='categories'
+      AND t.column_name='name'
+      AND t.row_id=c.id
+    GROUP BY c.id, c.name
+    ORDER BY c.id ASC
+  `);
+
   return res.rows.map(cat => ({
-    ...cat,
-    name: cat.name.toString() // osigurava da je string
+    id: cat.id,
+    name: cat.name,
+    name_translations: cat.translations || {}
   }));
 };
+
+
 
 
 

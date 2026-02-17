@@ -85,6 +85,7 @@ export const updateCompany = async (id, data) => {
   return res.rows[0];
 };
 
+
 /* ===== Delete company ===== */
 export const deleteCompany = async (id) => {
   await pool.query(`DELETE FROM companies WHERE id = $1`, [id]);

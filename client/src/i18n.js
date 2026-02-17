@@ -1,0 +1,404 @@
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+
+// Ovde dodaj tekstove po jeziku
+const resources = {
+  en: {
+    translation: {
+      header: {
+        logo: "TerminDirekt",
+        register: "Register",
+        login: "Login",
+        account: "My Account",
+        logout: "Logout",
+        category: "Category"
+      },
+
+      hero: {
+        title: "Book an appointment online",
+        search_placeholder: "Search companies or services...",
+        all_locations: "All locations",
+        search_button: "Search"
+      },
+      home: {
+        must_login: "You must be logged in to book",
+        booking_success: "Booking successfully created!",
+        booking_error: "Error creating booking",
+        only_users_booking: "Only regular users can book",
+        no_companies: "No companies to show",
+        login_to_book: "Please login to book",
+        login: "Login",
+        cancel: "Cancel"
+      },
+      companyCard: {
+        no_reviews: "No reviews",
+        book_button: "Book"
+      },
+      categoryPage: {
+        loading: "Loading...",
+        category_not_found: "Category not found",
+        search_placeholder: "Search companies or services..."
+      },
+      auth: {
+        register: "Register",
+        login: "Login",
+        login_button: "Log in",
+        logging_in: "Logging in...",
+        forgot_password: "Forgot password?",
+        company: "Company",
+        user: "User",
+        company_name: "Company Name",
+        user_name: "User Name",
+        city: "City",
+        phone: "Phone",
+        email: "Email",
+        password: "Password",
+        register_button: "Register",
+        enter_email_password: "Please enter email and password",
+        enter_company_name: "Please enter company name",
+        register_error: "Error during registration"
+      },
+      dashboard: {
+        avatar_alt: "User avatar",
+        edit_profile: "Edit profile",
+        my_bookings: "My bookings",
+        no_bookings: "No bookings yet",
+        cancel: "Cancel",
+        save: "Save",
+        profile_updated: "Profile updated successfully",
+        error_profile_update: "Error updating profile",
+        avatar_updated: "Avatar updated",
+        error_avatar_upload: "Error uploading avatar",
+        error_fetch_bookings: "Error fetching bookings",
+        error_booking: "Error booking service",
+        confirm_cancel_booking: "Are you sure you want to cancel this booking?",
+        booking_success: "Booking successfully created",
+        booking_cancelled: "Booking cancelled",
+        error_fetch_companies: "Error fetching companies",
+        access_denied: "Access denied",
+        loading: "Loading..."
+      },
+      companyPage: {
+        book_slot: "Book appointment",
+        services_title: "Services and Prices",
+        reviews: "Reviews",
+        rating_label: "Rating",
+        rating_input: "Rating (1–5)",
+        comment_input: "Comment",
+        comment_placeholder: "Leave a comment",
+        submit_review: "Send review",
+        no_reviews: "No reviews",
+        user_default: "User",
+        booking_success: "Booking successfully created!",
+        booking_error: "Error booking appointment",
+        login_required_review: "You must be logged in to leave a review",
+        not_found: "Company not found",
+        loading: "Loading..."
+      },
+      companyDashboard: {
+        company_info: "Company Information",
+        images: "Images",
+        services: "Company Services",
+        enter_service_name: "Enter service name",
+        enter_service_price: "Enter service price",
+        select_category: "Select category",
+        add_service: "Add service",
+        delete: "Delete",
+        unknown_service: "Unknown service",
+        slots: "Slots",
+        select_service: "Select service",
+        add_slot: "Add slot",
+        save_changes: "Save changes",
+        loading: "Loading...",
+        company_not_found: "Company not found",
+        error_loading_categories: "Error loading categories",
+        confirm_delete_image: "Are you sure you want to delete this image?",
+        image_deleted: "Image deleted",
+        error_delete_image: "Error deleting image",
+        enter_service_name_price_category: "Enter service name, price, and category",
+        service_added: "Service added",
+        service_deleted: "Service deleted",
+        fill_all_slot_fields: "Fill all slot fields",
+        slot_end_after_start: "Slot end must be after start",
+        service_not_found: "Service not found",
+        slot_added_temp: "Slot added temporarily",
+        slot_deleted: "Slot deleted",
+        error_delete_slot: "Error deleting slot",
+        all_changes_saved: "All changes saved",
+        error_save_changes: "Error saving changes"
+      }
+    }
+  },
+
+  sr: {
+    translation: {
+      header: {
+        logo: "TerminDirekt",
+        register: "Registracija",
+        login: "Prijavi se",
+        account: "Moj nalog",
+        logout: "Odjava",
+        category: "Kategorija"
+      },
+      hero: {
+        title: "Zakažite termin online",
+        search_placeholder: "Pretraži firme ili usluge...",
+        all_locations: "Sve lokacije",
+        search_button: "Pretraži"
+      },
+      home: {
+        must_login: "Morate biti ulogovani da biste zakazali termin",
+        booking_success: "Rezervacija uspešno kreirana!",
+        booking_error: "Greška pri kreiranju rezervacije",
+        only_users_booking: "Samo obični korisnici mogu da rezervišu termine",
+        no_companies: "Nema firmi za prikaz",
+        login_to_book: "Molimo ulogujte se da biste rezervisali termin",
+        login: "Ulogujte se",
+        cancel: "Otkaži"
+      },
+      companyCard: {
+        no_reviews: "Bez recenzija",
+        book_button: "Rezerviši"
+      },
+      categoryPage: {
+        loading: "Učitavanje...",
+        category_not_found: "Kategorija nije pronađena",
+        search_placeholder: "Pretraži firme ili usluge..."
+      },
+      auth: {
+        register: "Registracija",
+        login: "Prijava",
+        login_button: "Prijavi se",
+        logging_in: "Prijavljivanje...",
+        forgot_password: "Zaboravili ste lozinku?",
+        company: "Firma",
+        user: "Korisnik",
+        company_name: "Naziv firme",
+        user_name: "Ime korisnika",
+        city: "Grad",
+        phone: "Telefon",
+        email: "Email",
+        password: "Lozinka",
+        register_button: "Registruj se",
+        enter_email_password: "Morate uneti email i lozinku",
+        enter_company_name: "Morate uneti naziv firme",
+        register_error: "Greška pri registraciji"
+
+
+      },
+      dashboard: {
+        avatar_alt: "Avatar korisnika",
+        edit_profile: "Izmeni profil",
+        my_bookings: "Moje rezervacije",
+        no_bookings: "Nema rezervacija",
+        cancel: "Otkaži",
+        save: "Sačuvaj",
+        profile_updated: "Profil uspešno sačuvan",
+        error_profile_update: "Greška pri čuvanju profila",
+        avatar_updated: "Avatar uspešno ažuriran",
+        error_avatar_upload: "Greška pri upload-u avatara",
+        error_fetch_bookings: "Greška pri učitavanju rezervacija",
+        error_booking: "Greška pri rezervaciji",
+        confirm_cancel_booking: "Da li ste sigurni da želite da otkažete rezervaciju?",
+        booking_success: "Rezervacija uspešno kreirana",
+        booking_cancelled: "Rezervacija otkazana",
+        error_fetch_companies: "Greška pri učitavanju firmi",
+        access_denied: "Pristup odbijen",
+        loading: "Učitavanje..."
+      },
+      companyPage: {
+        book_slot: "Rezerviši termin",
+        services_title: "Usluge i cene",
+        reviews: "Recenzije",
+        rating_label: "Ocena",
+        rating_input: "Ocena (1–5)",
+        comment_input: "Komentar",
+        comment_placeholder: "Ostavite komentar",
+        submit_review: "Pošalji recenziju",
+        no_reviews: "Nema recenzija",
+        user_default: "Korisnik",
+        booking_success: "Termin uspešno zakazan!",
+        booking_error: "Greška pri rezervaciji termina",
+        login_required_review: "Morate biti ulogovani da ostavite recenziju",
+        not_found: "Firma nije pronađena",
+        loading: "Učitavanje..."
+      },
+      companyDashboard: {
+        company_info: "Informacije o firmi",
+        images: "Slike",
+        services: "Firma Servise",
+        enter_service_name: "Unesite naziv usluge",
+        enter_service_price: "Unesite cenu usluge",
+        select_category: "Izaberite kategoriju",
+        add_service: "Dodaj uslugu",
+        delete: "Obriši",
+        unknown_service: "Nepoznata usluga",
+        slots: "Termini",
+        select_service: "Izaberite uslugu",
+        add_slot: "Dodaj termin",
+        save_changes: "Sačuvaj izmene",
+        loading: "Učitavanje...",
+        company_not_found: "Firma nije pronađena",
+        error_loading_categories: "Greška pri učitavanju kategorija",
+        confirm_delete_image: "Da li ste sigurni da želite obrisati sliku?",
+        image_deleted: "Slika obrisana",
+        error_delete_image: "Greška prilikom brisanja slike",
+        enter_service_name_price_category: "Unesite naziv, cenu i kategoriju usluge",
+        service_added: "Usluga dodata",
+        service_deleted: "Usluga obrisana",
+        fill_all_slot_fields: "Popunite sva polja termina",
+        slot_end_after_start: "Kraj termina mora biti posle početka",
+        service_not_found: "Usluga nije pronađena",
+        slot_added_temp: "Termin dodat privremeno",
+        slot_deleted: "Termin obrisan",
+        error_delete_slot: "Greška prilikom brisanja termina",
+        all_changes_saved: "Sve izmene sačuvane",
+        error_save_changes: "Greška prilikom čuvanja izmena"
+      }
+    }
+  },
+
+  sv: {
+    translation: {
+      header: {
+        logo: "TerminDirekt",
+        register: "Registrera ",
+        login: "Logga in",
+        account: "Mitt konto",
+        logout: "Logga ut",
+        category: "Kategori"
+      },
+      hero: {
+        title: "Boka tid online",
+        search_placeholder: "Sök företag eller tjänster...",
+        all_locations: "Alla platser",
+        search_button: "Sök"
+      },
+      home: {
+        must_login: "Du måste vara inloggad för att boka",
+        booking_success: "Bokningen skapades!",
+        booking_error: "Fel vid bokning",
+        only_users_booking: "Endast vanliga användare kan boka",
+        no_companies: "Inga företag att visa",
+        login_to_book: "Vänligen logga in för att boka",
+        login: "Logga in",
+        cancel: "Avbryt"
+      },
+      companyCard: {
+        no_reviews: "Inga recensioner",
+        book_button: "Boka"
+      },
+      categoryPage: {
+        loading: "Läser...",
+        category_not_found: "Kategorin hittades inte",
+        search_placeholder: "Sök företag eller tjänster..."
+      },
+      auth: {
+        register: "Registrera",
+        login: "Logga in",
+        login_button: "Logga in",
+        logging_in: "Loggar in...",
+        forgot_password: "Glömt lösenord?",
+        company: "Företag",
+        user: "Användare",
+        company_name: "Företagsnamn",
+        user_name: "Användarnamn",
+        city: "Stad",
+        phone: "Telefon",
+        email: "Email",
+        password: "Lösenord",
+        register_button: "Registrera",
+        enter_email_password: "Ange e-post och lösenord",
+        enter_company_name: "Ange företagsnamn",
+        register_error: "Fel vid registrering"
+      },
+      dashboard: {
+        avatar_alt: "Användaravatar",
+        edit_profile: "Redigera profil",
+        my_bookings: "Mina bokningar",
+        no_bookings: "Inga bokningar än",
+        cancel: "Avbryt",
+        save: "Spara",
+        profile_updated: "Profil uppdaterad",
+        error_profile_update: "Fel vid uppdatering av profil",
+        avatar_updated: "Avatar uppdaterad",
+        error_avatar_upload: "Fel vid uppladdning av avatar",
+        error_fetch_bookings: "Fel vid hämtning av bokningar",
+        error_booking: "Fel vid bokning av tjänst",
+        confirm_cancel_booking: "Är du säker på att du vill avboka denna bokning?",
+        booking_success: "Bokningen skapades",
+        booking_cancelled: "Bokningen avbokad",
+        error_fetch_companies: "Fel vid hämtning av företag",
+        access_denied: "Åtkomst nekad",
+        loading: "Läser..."
+      },
+      companyPage: {
+        book_slot: "Boka tid",
+        services_title: "Tjänster och priser",
+        reviews: "Recensioner",
+        rating_label: "Betyg",
+        rating_input: "Betyg (1–5)",
+        comment_input: "Kommentar",
+        comment_placeholder: "Lämna kommentar",
+        submit_review: "Skicka recension",
+        no_reviews: "Inga recensioner",
+        user_default: "Användare",
+        booking_success: "Bokningen skapades!",
+        booking_error: "Fel vid bokning",
+        login_required_review: "Du måste vara inloggad för att lämna en recension",
+        not_found: "Företaget hittades inte",
+        loading: "Läser..."
+      },
+      companyDashboard: {
+        company_info: "Företagsinformation",
+        images: "Bilder",
+        services: "Företag Services",
+        enter_service_name: "Ange tjänstens namn",
+        enter_service_price: "Ange tjänstens pris",
+        select_category: "Välj kategori",
+        add_service: "Lägg till tjänst",
+        delete: "Radera",
+        unknown_service: "Okänd tjänst",
+        slots: "Tider",
+        select_service: "Välj tjänst",
+        add_slot: "Lägg till tid",
+        save_changes: "Spara ändringar",
+        loading: "Läser...",
+        company_not_found: "Företaget hittades inte",
+        error_loading_categories: "Fel vid hämtning av kategorier",
+        confirm_delete_image: "Är du säker på att du vill radera bilden?",
+        image_deleted: "Bild raderad",
+        error_delete_image: "Fel vid radering av bild",
+        enter_service_name_price_category: "Ange tjänstens namn, pris och kategori",
+        service_added: "Tjänst tillagd",
+        service_deleted: "Tjänst raderad",
+        fill_all_slot_fields: "Fyll i alla tidfält",
+        slot_end_after_start: "Sluttiden måste vara efter starttiden",
+        service_not_found: "Tjänst hittades inte",
+        slot_added_temp: "Tid tillagd tillfälligt",
+        slot_deleted: "Tid raderad",
+        error_delete_slot: "Fel vid radering av tid",
+        all_changes_saved: "Alla ändringar sparade",
+        error_save_changes: "Fel vid sparande av ändringar"
+      }
+    }
+  }
+};
+i18n
+  .use(LanguageDetector)  // automatsko detektovanje jezika
+  .use(initReactI18next)  // integracija sa React-om
+  .init({
+    resources,
+    fallbackLng: "en",
+    supportedLngs: ["en", "sr", "sv"],
+    load: "languageOnly",
+    interpolation: { escapeValue: false },
+    detection: {
+      order: ["localStorage", "navigator"],
+      caches: ["localStorage"]
+    }
+  });
+
+
+export default i18n;

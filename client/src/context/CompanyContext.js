@@ -108,7 +108,6 @@ export const CompanyProvider = ({ children }) => {
   };
 
   /* ================= SERVICES ================= */
-  // Dashboard is owner working condition
   const updateCompanyServices = async (services) => {
     if (!company.id) throw new Error("Company ID nije definisan");
 
@@ -118,7 +117,14 @@ export const CompanyProvider = ({ children }) => {
         { services }
       );
 
-      return res.data.services || [];
+      const updatedServices = res.data.services || [];
+
+      setCompany(prev => ({
+        ...prev,
+        services: updatedServices
+      }));
+
+      return updatedServices;
     } catch (err) {
       console.error("Greška pri update servisa:", err);
       throw err;
@@ -126,7 +132,6 @@ export const CompanyProvider = ({ children }) => {
   };
 
   /* ================= SLOTS ================= */
-  // we don't set company.slots
   const updateCompanySlots = async (slots) => {
     if (!company.id) throw new Error("Company ID nije definisan");
 
@@ -136,12 +141,21 @@ export const CompanyProvider = ({ children }) => {
         { slots }
       );
 
-      return res.data.slots || [];
+      const updatedSlots = res.data.slots || [];
+
+      setCompany(prev => ({
+        ...prev,
+        slots: updatedSlots
+      }));
+
+      return updatedSlots;
     } catch (err) {
       console.error("Greška pri update slotova:", err);
       throw err;
     }
   };
+
+
 
   /* ================= SAVE EVERYTHING (OPTIONAL) ================= */
   const saveCompanyData = async ({ name, description, services, slots }) => {

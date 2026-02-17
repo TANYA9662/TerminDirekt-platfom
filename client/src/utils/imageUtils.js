@@ -4,7 +4,11 @@ const API_BASE =
 export const absoluteUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http")) return path;
-  return `${API_BASE}${path}`;
+
+  // ako nema leading slash — dodaj ga
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  return `${API_BASE}${normalizedPath}`;
 };
 
 export const DEFAULT_COMPANY_IMAGE = absoluteUrl(
@@ -20,12 +24,22 @@ export const mapCompanyImages = (images = []) => {
     return [{ url: DEFAULT_COMPANY_IMAGE, isDefault: true }];
   }
 
-  return images.map(img => ({
-    ...img,
-    url: absoluteUrl(img.url), // ⬅️ SAMO url koji backend pošalje
-    isDefault: false,
-  }));
+  return images.map(img => {
+    let url = img.image_path || img.url || "";
+
+    // ako je već full URL ili počinje sa /uploads, ne dodaj API_BASE ponovo
+    if (!url.startsWith("http") && !url.startsWith("/uploads")) {
+      url = `/uploads/companies/${url}`;
+    }
+
+    return {
+      ...img,
+      url: absoluteUrl(url),
+      isDefault: false,
+    };
+  });
 };
+
 
 export const getUserAvatar = (user) =>
   absoluteUrl(user?.avatar) || DEFAULT_AVATAR;

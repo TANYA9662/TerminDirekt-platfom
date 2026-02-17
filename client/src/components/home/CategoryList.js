@@ -1,12 +1,15 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import Badge from "../ui/Badge";
 
 const CategoryList = ({ categories }) => {
+  const { t } = useTranslation();
+
   return (
     <section className="py-10 bg-gray-200">
       <div className="max-w-6xl mx-auto px-4">
         <h2 className="text-2xl font-bold mb-6 text-textDark">
-          Kategorije
+          {t("categories.title", "Kategorije")}
         </h2>
 
         <div className="flex flex-wrap gap-3">
@@ -15,7 +18,7 @@ const CategoryList = ({ categories }) => {
               key={cat.id}
               className="px-4 py-2 rounded-full border border-accent text-accent font-medium hover:bg-accent hover:text-cardBg transition cursor-pointer"
             >
-              {cat.name}
+              {t(`categories.${cat.name}`, cat.name)}
             </span>
           ))}
         </div>
@@ -23,6 +26,5 @@ const CategoryList = ({ categories }) => {
     </section>
   );
 };
-
 
 export default CategoryList;

@@ -7,20 +7,25 @@ import { PORT, FRONTEND_URLS } from './config/env.js';
 import apiRoutes from './routes/api.js';
 import uploadRouter from './routes/uploads.js';
 import { errorHandler } from './middlewares/errorMiddleware.js';
+import { langMiddleware } from './middlewares/langMiddleware.js'; // aktiviramo middleware
+
+
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// CORS middleware sa podrškom za lokalni, produkcioni i Vercel preview deploy-eve
+
+// ================== CORS ==================
 const allowedOrigins = Array.isArray(FRONTEND_URLS)
   ? FRONTEND_URLS
   : FRONTEND_URLS.split(',');
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // Postman / server-side requests
 
     if (
       allowedOrigins.includes(origin) ||
@@ -36,30 +41,33 @@ app.use(cors({
   credentials: true
 }));
 
-
+// ================== Body parsers ==================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Pool connection dostupan za rute
+// ================== DB Pool ==================
 app.use((req, res, next) => {
   req.pool = pool;
   next();
 });
 
-// Static files
+// ================== Language Middleware ==================
+app.use(langMiddleware); // req.lang će biti dostupan u svim rutama
+
+// ================== Static Files ==================
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// Routes
+// ================== Routes ==================
 app.use('/upload', uploadRouter);
 app.use('/api', apiRoutes);
 
-// Error middleware
+// ================== Error Handling ==================
 app.use(errorHandler);
 
-// Test route
+// ================== Test Route ==================
 app.get('/', (req, res) => res.send('TerminDirekt API radi! 🚀'));
 
-// Start server
+// ================== Start Server ==================
 app.listen(PORT, () => {
   console.log(`Server radi na portu ${PORT}`);
 });

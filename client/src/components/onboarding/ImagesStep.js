@@ -2,15 +2,18 @@ import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { CompanyContext } from "../../context/CompanyContext";
 import API from "../../api";
+import { useTranslation } from "react-i18next";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function ImagesStep() {
+  const { t } = useTranslation();
   const { currentStepIndex, steps } = useOutletContext();
   const { company, setCompany } = useContext(CompanyContext);
   const navigate = useNavigate();
 
   const [uploadedImages, setUploadedImages] = useState([]);
   const [localFiles, setLocalFiles] = useState([]);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -20,7 +23,8 @@ export default function ImagesStep() {
   const handleFiles = (event) => {
     const files = Array.from(event.target.files);
     const valid = files.filter(f => f.type.startsWith("image/") && f.size <= 5 * 1024 * 1024);
-    if (!valid.length) return alert("Dozvoljene su slike do 5MB");
+    if (!valid.length) return toast.error(t("onboarding.image_limit"));
+
     const previews = valid.map(f => ({ file: f, preview: URL.createObjectURL(f) }));
     setLocalFiles(prev => [...prev, ...previews]);
   };
@@ -36,11 +40,8 @@ export default function ImagesStep() {
   };
 
   const handleNext = async () => {
-    setError("");
-
     if (!localFiles.length && !uploadedImages.length) {
-      setError("Molimo dodajte bar jednu sliku.");
-      return;
+      return toast.error(t("onboarding.add_at_least_one_image"));
     }
 
     setLoading(true);
@@ -59,12 +60,13 @@ export default function ImagesStep() {
         setUploadedImages(res.data.images);
         setCompany(prev => ({ ...prev, images: res.data.images }));
         setLocalFiles([]);
+        toast.success(t("onboarding.images_saved"));
       }
 
       navigate(`/onboarding/${steps[currentStepIndex + 1]}`);
     } catch (err) {
       console.error("Upload error:", err);
-      setError(err.response?.data?.message || err.message || "Greška pri čuvanju slika.");
+      toast.error(err.response?.data?.message || err.message || t("onboarding.error_saving_images"));
     } finally {
       setLoading(false);
     }
@@ -76,8 +78,7 @@ export default function ImagesStep() {
     <div className="min-h-screen bg-gray-200 py-10">
       <div className="max-w-7xl mx-auto px-6">
         <div className="bg-white p-6 rounded-3xl shadow-md space-y-6">
-          <h3 className="text-2xl font-semibold text-gray-800">Dodajte slike</h3>
-          {error && <div className="text-red-600">{error}</div>}
+          <h3 className="text-2xl font-semibold text-gray-800">{t("onboarding.add_images")}</h3>
 
           <input
             type="file"
@@ -93,7 +94,7 @@ export default function ImagesStep() {
               <div key={`uploaded-${idx}`} className="relative w-32 h-32 flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
                 <img
                   src={`http://localhost:3001${img.image_path}`}
-                  alt={`Company ${idx}`}
+                  alt={`${t("onboarding.company")} ${idx}`}
                   className="w-full h-full object-cover"
                 />
                 <button
@@ -109,7 +110,7 @@ export default function ImagesStep() {
               <div key={`local-${idx}`} className="relative w-32 h-32 flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
                 <img
                   src={img.preview}
-                  alt={`Company ${idx}`}
+                  alt={`${t("onboarding.company")} ${idx}`}
                   className="w-full h-full object-cover"
                 />
                 <button
@@ -129,19 +130,20 @@ export default function ImagesStep() {
               disabled={loading}
               className="px-6 py-2 bg-gray-400 text-white rounded-xl hover:bg-gray-500 transition"
             >
-              Nazad
+              {t("onboarding.back")}
             </button>
             <button
               onClick={handleNext}
               disabled={loading}
               className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
             >
-              {loading ? "Čuvanje..." : "Dalje"}
+              {loading ? t("onboarding.saving") : t("onboarding.next")}
             </button>
           </div>
         </div>
       </div>
+
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );
-
 }

@@ -2,17 +2,12 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
-
-import { AuthProvider } from "./context/AuthContext";
-import { CompanyProvider } from "./context/CompanyContext";
+import "./i18n";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <CompanyProvider>
-        <App />
-      </CompanyProvider>
-    </AuthProvider>
+    <App />
   </React.StrictMode>
 );

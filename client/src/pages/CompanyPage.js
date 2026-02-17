@@ -7,9 +7,10 @@ import ServiceList from "../components/company/ServiceList";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { absoluteUrl } from "../utils/imageUtils";
-
+import { useTranslation } from "react-i18next";
 
 const CompanyPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { user } = useContext(AuthContext);
 
@@ -17,7 +18,6 @@ const CompanyPage = () => {
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
   const [bookingOpen, setBookingOpen] = useState(false);
-
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState("");
   const [bookedSlotId, setBookedSlotId] = useState(null);
@@ -56,7 +56,6 @@ const CompanyPage = () => {
   const handleBooking = async ({ service, slotId }) => {
     try {
       const token = localStorage.getItem("token");
-
       await API.post(
         "/bookings",
         { companyId: company.id, service, slotId },
@@ -64,21 +63,17 @@ const CompanyPage = () => {
       );
       setBookedSlotId(slotId);
       setBookingOpen(false);
-
-      // 3️⃣ toast
-      toast.success("Termin uspešno zakazan!");
-
+      toast.success(t("companyPage.booking_success"));
     } catch (err) {
       console.error(err);
-      toast.error("Greška pri rezervaciji termina");
+      toast.error(t("companyPage.booking_error"));
     }
   };
-
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!user) {
-      toast.error("Morate biti ulogovani da ostavite recenziju");
+      toast.error(t("companyPage.login_required_review"));
       return;
     }
     try {
@@ -91,15 +86,15 @@ const CompanyPage = () => {
       setNewRating(5);
       setNewComment("");
       fetchReviews();
-      toast.success("Recenzija dodata");
+      toast.success(t("companyPage.review_added"));
     } catch (err) {
       console.error(err);
-      toast.error("Greška pri dodavanju recenzije");
+      toast.error(t("companyPage.review_error"));
     }
   };
 
-  if (loading) return <p className="p-6">Učitavanje...</p>;
-  if (!company) return <p className="p-6">Firma nije pronađena</p>;
+  if (loading) return <p className="p-6">{t("companyPage.loading")}</p>;
+  if (!company) return <p className="p-6">{t("companyPage.not_found")}</p>;
 
   const canReview = user?.role === "user";
 
@@ -116,10 +111,9 @@ const CompanyPage = () => {
               onClick={() => setBookingOpen(true)}
               className="mt-2 px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
             >
-              Rezerviši termin
+              {t("companyPage.book_slot")}
             </button>
           )}
-
         </div>
         {company.images?.length > 0 && (
           <div className="flex gap-4 px-6 pb-6 overflow-x-auto">
@@ -129,7 +123,7 @@ const CompanyPage = () => {
                 src={absoluteUrl(img.url)}
                 alt={`slika-${idx}`}
                 className="w-72 h-44 object-cover rounded-2xl ring-1 ring-gray-300 shadow-sm flex-shrink-0"
-                onError={(e) => e.target.src = absoluteUrl("/uploads/companies/default.png")}
+                onError={(e) => (e.target.src = absoluteUrl("/uploads/companies/default.png"))}
               />
             ))}
           </div>
@@ -139,31 +133,37 @@ const CompanyPage = () => {
       {/* SERVICES */}
       {company.services?.length > 0 && (
         <div className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800">Usluge i cene</h2>
+          <h2 className="text-xl font-semibold text-gray-800">
+            {t("companyPage.services_title")}
+          </h2>
           <ServiceList services={company.services} />
         </div>
       )}
 
       {/* REVIEWS */}
       <div className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-6">
-        <h2 className="text-2xl font-semibold text-gray-800">Recenzije</h2>
+        <h2 className="text-2xl font-semibold text-gray-800">{t("companyPage.reviews")}</h2>
         {reviews.length > 0 ? (
           <div className="space-y-3">
             {reviews.map((rev) => (
               <div key={rev.id} className="p-4 rounded-xl bg-gray-50 ring-1 ring-gray-200">
-                <p className="font-semibold text-gray-800">{rev.user_name || "Korisnik"}</p>
-                <p className="text-sm text-gray-600">Ocena: {rev.rating}</p>
+                <p className="font-semibold text-gray-800">
+                  {rev.user_name || t("companyPage.user_default")}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {t("companyPage.rating_label")}: {rev.rating}
+                </p>
                 {rev.comment && <p className="mt-1 text-gray-700">{rev.comment}</p>}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-500">Nema recenzija</p>
+          <p className="text-gray-500">{t("companyPage.no_reviews")}</p>
         )}
         {canReview && (
           <form onSubmit={handleReviewSubmit} className="space-y-4">
             <label className="block text-sm font-medium text-gray-700">
-              Ocena (1–5)
+              {t("companyPage.rating_input")}
               <input
                 type="number"
                 min="1"
@@ -175,23 +175,24 @@ const CompanyPage = () => {
               />
             </label>
             <label className="block text-sm font-medium text-gray-700">
-              Komentar
+              {t("companyPage.comment_input")}
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 className="mt-1 w-full p-3 rounded-lg ring-1 ring-gray-300"
-                placeholder="Ostavite komentar"
+                placeholder={t("companyPage.comment_placeholder")}
               />
             </label>
             <button
               type="submit"
               className="px-5 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700"
             >
-              Pošalji recenziju
+              {t("companyPage.submit_review")}
             </button>
           </form>
         )}
       </div>
+
       {/* BOOKING MODAL */}
       {bookingOpen && company && (
         <BookingModal
@@ -202,6 +203,7 @@ const CompanyPage = () => {
           bookedSlotId={bookedSlotId}
         />
       )}
+
       {/* TOAST */}
       <ToastContainer position="top-right" autoClose={3000} newestOnTop pauseOnHover />
     </div>

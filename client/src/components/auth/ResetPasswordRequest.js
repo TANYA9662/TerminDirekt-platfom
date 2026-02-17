@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api";
+import { useTranslation } from "react-i18next";
 
 const ResetPasswordRequest = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -16,11 +18,12 @@ const ResetPasswordRequest = () => {
     setError("");
 
     try {
-      // call backend route
       await API.post("/auth/reset-password-request", { email });
-      setMessage("Proverite svoj email za link za reset lozinke.");
+      setMessage(t("auth.reset_email_sent", "Proverite svoj email za link za reset lozinke."));
     } catch (err) {
-      setError(err.response?.data?.message || "Došlo je do greške. Pokušajte ponovo.");
+      setError(
+        err.response?.data?.message || t("auth.reset_error", "Došlo je do greške. Pokušajte ponovo.")
+      );
     } finally {
       setLoading(false);
     }
@@ -29,7 +32,9 @@ const ResetPasswordRequest = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="max-w-md w-full p-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-center text-textDark">Reset lozinke</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center text-textDark">
+          {t("auth.reset_password", "Reset lozinke")}
+        </h2>
 
         {message && <p className="text-green-500 text-center mb-4">{message}</p>}
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
@@ -37,7 +42,7 @@ const ResetPasswordRequest = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
-            placeholder="Unesite svoj email"
+            placeholder={t("auth.enter_email", "Unesite svoj email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -46,9 +51,12 @@ const ResetPasswordRequest = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full px-4 py-2 rounded-lg font-bold text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-gray-400 hover:bg-accentLight"} transition`}
+            className={`w-full px-4 py-2 rounded-lg font-bold text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-gray-400 hover:bg-accentLight"
+              } transition`}
           >
-            {loading ? "Slanje..." : "Pošalji link za reset"}
+            {loading
+              ? t("auth.sending", "Slanje...")
+              : t("auth.send_reset_link", "Pošalji link za reset")}
           </button>
         </form>
 
@@ -58,7 +66,7 @@ const ResetPasswordRequest = () => {
             className="text-sm text-accent hover:underline"
             onClick={() => navigate("/login")}
           >
-            Nazad na prijavu
+            {t("auth.back_to_login", "Nazad na prijavu")}
           </button>
         </div>
       </div>

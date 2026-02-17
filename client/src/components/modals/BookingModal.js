@@ -1,8 +1,19 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { absoluteUrl } from "../../utils/imageUtils";
+import { useTranslation } from "react-i18next";
 
+/* ================= MULTI LANGUAGE HELPER ================= */
+const getTranslated = (field, lang) => {
+  if (!field) return "";
+  if (typeof field === "string") return field;
+  if (typeof field === "object") return field[lang] || field.sr || field.en || field.sv || "";
+  return "";
+};
 
 const BookingModal = ({ company, onClose, onSubmit }) => {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language || "sr";
+
   const [selectedServiceId, setSelectedServiceId] = useState(null);
   const [selectedSlotId, setSelectedSlotId] = useState(null);
 
@@ -28,8 +39,10 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
 
   if (!company) return null;
 
-  const images = company.images || [];
   const selectedService = company.services.find(s => Number(s.id) === Number(selectedServiceId));
+  const companyName = getTranslated(company.name, lang);
+  const companyDescription = getTranslated(company.description, lang);
+  const images = company.images || [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -38,7 +51,7 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
         {/* HEADER */}
         <div className="flex justify-between items-center border-b border-gray-200 pb-3">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">{company.name}</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{companyName}</h2>
             <p className="text-gray-500 text-sm mt-1">{company.city}</p>
           </div>
           <button
@@ -50,8 +63,8 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
         </div>
 
         {/* DESCRIPTION */}
-        {company.description && (
-          <p className="text-gray-600 leading-relaxed">{company.description}</p>
+        {companyDescription && (
+          <p className="text-gray-600 leading-relaxed">{companyDescription}</p>
         )}
 
         {/* IMAGES */}
@@ -61,37 +74,46 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
               <img
                 key={img.id || i}
                 src={absoluteUrl(img.url)}
-                alt={`${company.name} ${i}`}
-                onError={e => (e.target.src = absoluteUrl("/uploads/companies/default.png"))} // ⬅️ fallback
+                alt={`${companyName} ${i}`}
+                onError={e => (e.target.src = absoluteUrl("/uploads/companies/default.png"))}
                 className="w-32 h-32 object-cover rounded-xl shadow-sm flex-shrink-0 transition-transform duration-300 hover:scale-105 hover:shadow-lg"
               />
             ))}
           </div>
         )}
 
-        {/* SERVICES AND SLOTS */}
+        {/* SERVICES */}
         <div className="space-y-2">
-          <h3 className="font-semibold text-lg text-gray-700 border-b border-gray-200 pb-1">Usluge i cene</h3>
+          <h3 className="font-semibold text-lg text-gray-700 border-b border-gray-200 pb-1">
+            {t("booking.services_and_prices", "Usluge i cene")}
+          </h3>
           <div className="flex gap-3 overflow-x-auto py-2">
-            {company.services.map(service => (
-              <div
-                key={service.id}
-                onClick={() => setSelectedServiceId(service.id)}
-                className={`flex-shrink-0 p-3 rounded-xl cursor-pointer border transition-all ${selectedServiceId === service.id
-                  ? "bg-indigo-600 text-white border-indigo-600 shadow-lg"
-                  : "bg-gray-50 text-gray-700 border-gray-200 hover:shadow-md"
-                  }`}
-              >
-                <div className="font-medium">{service.name}</div>
-                <div className="text-sm">{service.price.toLocaleString("sr-RS")} RSD</div>
-              </div>
-            ))}
+            {company.services.map(service => {
+              const serviceName = getTranslated(service.name, lang);
+              return (
+                <div
+                  key={service.id}
+                  onClick={() => setSelectedServiceId(service.id)}
+                  className={`flex-shrink-0 p-3 rounded-xl cursor-pointer border transition-all ${selectedServiceId === service.id
+                    ? "bg-indigo-600 text-white border-indigo-600 shadow-lg"
+                    : "bg-gray-50 text-gray-700 border-gray-200 hover:shadow-md"
+                    }`}
+                >
+                  <div className="font-medium">{serviceName}</div>
+                  <div className="text-sm">{service.duration} {t("booking.minutes", "min")}</div>
+                  <div className="text-sm">{service.price.toLocaleString(lang === "en" ? "en-US" : "sr-RS")} RSD</div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
+        {/* AVAILABLE SLOTS */}
         {availableSlots.length > 0 ? (
           <div className="space-y-2">
-            <h3 className="font-semibold text-lg text-gray-700">Slobodni termini</h3>
+            <h3 className="font-semibold text-lg text-gray-700">
+              {t("booking.available_slots", "Slobodni termini")}
+            </h3>
             <div className="flex gap-3 overflow-x-auto py-2">
               {availableSlots.map(slot => (
                 <div
@@ -102,13 +124,17 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
                     : "bg-gray-100 text-gray-700 border-gray-200 hover:shadow-md"
                     }`}
                 >
-                  {new Date(slot.start_time).toLocaleString("sr-RS")}
+                  {new Date(slot.start_time).toLocaleString(
+                    lang === "en" ? "en-US" : lang === "sv" ? "sv-SE" : "sr-RS"
+                  )}
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-500">Nema slobodnih termina</p>
+          <p className="text-sm text-gray-500">
+            {t("booking.no_available_slots", "Nema slobodnih termina")}
+          </p>
         )}
 
         {/* ACTIONS */}
@@ -117,18 +143,21 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
           >
-            Otkaži
+            {t("booking.cancel", "Otkaži")}
           </button>
+
           <button
-            onClick={async () => {
+            onClick={() => {
               if (!selectedService || !selectedSlotId) return;
-              await new Promise(resolve => setTimeout(resolve, 150));
-              onSubmit({ service: selectedService.name, slotId: selectedSlotId });
+              onSubmit({
+                service: getTranslated(selectedService.name, lang),
+                slotId: selectedSlotId
+              });
             }}
-            disabled={!selectedSlotId || !selectedService}
+            disabled={!selectedService || !selectedSlotId}
             className="px-5 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Rezerviši
+            {t("booking.book_now", "Rezerviši")}
           </button>
         </div>
 

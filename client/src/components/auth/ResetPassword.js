@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import API from "../../api";
+import { useTranslation } from "react-i18next";
 
 const ResetPassword = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const navigate = useNavigate();
@@ -14,8 +16,8 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!token) setError("Token nije validan.");
-  }, [token]);
+    if (!token) setError(t("auth.invalid_token", "Token nije validan."));
+  }, [token, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +25,7 @@ const ResetPassword = () => {
     setMessage("");
 
     if (password !== confirmPassword) {
-      setError("Lozinke se ne poklapaju.");
+      setError(t("auth.password_mismatch", "Lozinke se ne poklapaju."));
       return;
     }
 
@@ -31,10 +33,17 @@ const ResetPassword = () => {
 
     try {
       await API.post("/auth/reset-password", { token, password });
-      setMessage("Lozinka je uspešno promenjena. Možete se prijaviti.");
+      setMessage(
+        t(
+          "auth.password_changed",
+          "Lozinka je uspešno promenjena. Možete se prijaviti."
+        )
+      );
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || "Došlo je do greške.");
+      setError(
+        err.response?.data?.message || t("auth.reset_error", "Došlo je do greške.")
+      );
     } finally {
       setLoading(false);
     }
@@ -43,7 +52,9 @@ const ResetPassword = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="max-w-md w-full p-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-center text-textDark">Nova lozinka</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center text-textDark">
+          {t("auth.new_password", "Nova lozinka")}
+        </h2>
 
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
         {message && <p className="text-green-500 mb-4 text-center">{message}</p>}
@@ -51,7 +62,7 @@ const ResetPassword = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="password"
-            placeholder="Nova lozinka"
+            placeholder={t("auth.new_password", "Nova lozinka")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -59,7 +70,7 @@ const ResetPassword = () => {
           />
           <input
             type="password"
-            placeholder="Potvrdite lozinku"
+            placeholder={t("auth.confirm_password", "Potvrdite lozinku")}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
@@ -68,9 +79,14 @@ const ResetPassword = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full px-4 py-2 rounded-lg font-bold text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-gray-400 hover:bg-accentLight"} transition`}
+            className={`w-full px-4 py-2 rounded-lg font-bold text-white ${loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gray-400 hover:bg-accentLight"
+              } transition`}
           >
-            {loading ? "Ažuriranje..." : "Promeni lozinku"}
+            {loading
+              ? t("auth.updating", "Ažuriranje...")
+              : t("auth.change_password", "Promeni lozinku")}
           </button>
         </form>
 
@@ -80,7 +96,7 @@ const ResetPassword = () => {
             className="text-sm text-accent hover:underline"
             onClick={() => navigate("/login")}
           >
-            Nazad na prijavu
+            {t("auth.back_to_login", "Nazad na prijavu")}
           </button>
         </div>
       </div>

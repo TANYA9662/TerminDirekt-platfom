@@ -1,19 +1,22 @@
 export const buildImageUrl = (img) => {
-  // Ako slika ima Cloudinary public_id, koristi Cloudinary URL
-  if (img?.public_id) {
+  if (!img) return "/uploads/companies/default.png";
+
+  // Cloudinary URL ako postoji
+  if (img.public_id) {
     return `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${img.public_id}`;
   }
 
-  // Ako postoji lokalna filename, koristi lokalni upload path
-  if (img?.filename) {
+  // Lokalna slika
+  if (img.image_path || img.filename) {
+    const fileName = img.image_path || img.filename;
     const baseUrl =
       process.env.NODE_ENV === "production"
-        ? process.env.FRONTEND_URL || process.env.REACT_APP_API_URL || "https://termindirekt-backend.onrender.com"
+        ? process.env.FRONTEND_URL || process.env.REACT_APP_API_URL
         : `http://localhost:${process.env.PORT || 3001}`;
 
-    return `${baseUrl}/uploads/companies/${img.filename}`;
+    return `${baseUrl}/uploads/companies/${fileName}`;
   }
 
-  // Ako ništa od gore navedenog ne postoji, vrati default sliku
+  // Default fallback
   return "/uploads/companies/default.png";
 };

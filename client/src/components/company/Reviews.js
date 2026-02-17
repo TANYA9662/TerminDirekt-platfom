@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import API from "../../api";
+import { useTranslation } from "react-i18next";
 
 const Reviews = ({
   reviews = [],
@@ -8,6 +9,7 @@ const Reviews = ({
   averageRating = null,
   onNewReview,
 }) => {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ rating: 5, comment: "" });
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +22,7 @@ const Reviews = ({
       onNewReview && onNewReview();
     } catch (err) {
       console.error(err);
-      alert("Ne možete ostaviti recenziju");
+      alert(t("reviews.error_submit", "Ne možete ostaviti recenziju"));
     } finally {
       setLoading(false);
     }
@@ -28,44 +30,44 @@ const Reviews = ({
 
   return (
     <div className="space-y-6">
-      {/* average rate */}
-      {averageRating && (
+      {/* Average rating */}
+      {averageRating !== null && (
         <div className="text-lg font-semibold text-textDark">
           ⭐ {averageRating.toFixed(1)} / 5
         </div>
       )}
 
-      {/* List recension */}
+      {/* List reviews */}
       <div className="space-y-3">
         {reviews.length === 0 ? (
-          <div className="text-sm text-muted">Nema recenzija.</div>
+          <div className="text-sm text-gray-600">
+            {t("reviews.no_reviews", "Nema recenzija.")}
+          </div>
         ) : (
           reviews.map((r) => (
             <div key={r.id} className="bg-white p-4 rounded-xl shadow-sm">
               <div className="flex justify-between items-center">
                 <div className="font-medium text-textDark">
-                  {r.author_name || "Korisnik"}
+                  {r.author_name || t("reviews.anonymous", "Korisnik")}
                 </div>
                 <div className="text-accent font-semibold">
                   {r.rating}★
                 </div>
               </div>
-              <p className="text-sm text-textLight mt-1">
-                {r.comment}
-              </p>
+              <p className="text-sm text-gray-400 mt-1">{r.comment}</p>
             </div>
           ))
         )}
       </div>
 
-      {/* Form */}
+      {/* Review form */}
       {canReview ? (
         <form
           onSubmit={submitReview}
           className="bg-gray-200 p-4 rounded-2xl shadow space-y-3"
         >
           <h4 className="font-semibold text-textDark">
-            Dodaj recenziju
+            {t("reviews.add_review", "Dodaj recenziju")}
           </h4>
 
           <select
@@ -89,7 +91,7 @@ const Reviews = ({
             }
             rows={3}
             className="w-full bg-white border border-gray-300 px-3 py-2 rounded-xl"
-            placeholder="Napiši recenziju..."
+            placeholder={t("reviews.write_review", "Napiši recenziju...")}
           />
 
           <div className="flex justify-end">
@@ -97,13 +99,16 @@ const Reviews = ({
               disabled={loading}
               className="bg-accent text-cardBg px-5 py-2 rounded-xl hover:bg-accentLight transition disabled:opacity-50"
             >
-              Pošalji
+              {t("reviews.submit", "Pošalji")}
             </button>
           </div>
         </form>
       ) : (
-        <div className="text-sm text-muted">
-          Recenziju mogu ostaviti samo korisnici koji su imali termin.
+        <div className="text-sm text-gray-600">
+          {t(
+            "reviews.only_after_booking",
+            "Recenziju mogu ostaviti samo korisnici koji su imali termin."
+          )}
         </div>
       )}
     </div>

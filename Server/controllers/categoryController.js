@@ -1,31 +1,64 @@
 import * as Category from '../models/Category.js';
 import { pool } from '../config/db.js';
 
+
 // GET /api/categories
 export const getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.getAllCategories();
-    res.json(categories); // log uklonjen
+    // uzimamo jezik iz query param ili header
+    const lang = (req.query.lang || req.headers['accept-language'] || 'en').split("-")[0];
+
+    const result = await pool.query(`
+      SELECT c.id,
+             c.name,
+             jsonb_object_agg(t.lang_code, t.value) AS name_translations
+      FROM categories c
+      LEFT JOIN translations t
+        ON t.row_id = c.id AND t.table_name = 'categories' AND t.column_name = 'name'
+      GROUP BY c.id, c.name
+    `);
+
+    const categories = result.rows.map(c => ({
+      ...c,
+      name: c.name_translations?.[lang] || c.name
+    }));
+
+    res.json(categories);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Greška pri učitavanju kategorija' });
+    res.status(500).json({ error: 'Server error' });
   }
 };
-
 export const getCategoryById = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ message: "Nevažeći ID kategorije" });
 
   try {
-    const result = await pool.query('SELECT * FROM categories WHERE id = $1', [id]);
+    const result = await pool.query(`
+      SELECT c.id,
+             c.name,
+             jsonb_object_agg(t.lang_code, t.value) AS name_translations
+      FROM categories c
+      LEFT JOIN translations t
+        ON t.row_id = c.id AND t.table_name = 'categories' AND t.column_name = 'name'
+      WHERE c.id = $1
+      GROUP BY c.id, c.name
+    `, [id]);
+
     if (result.rows.length === 0) return res.status(404).json({ message: "Kategorija nije pronađena" });
 
-    res.json(result.rows[0]);
+    const category = result.rows[0];
+
+    res.json({
+      ...category,
+      name: category.name_translations?.[req.query.lang?.split('-')[0] || req.headers['accept-language']?.split('-')[0] || 'en'] || category.name
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Greška na serveru" });
   }
 };
+
 
 
 // POST /api/categories

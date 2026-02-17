@@ -1,5 +1,5 @@
 import { pool } from '../config/db.js';
-import * as Slot from '../models/Slot.js';
+//import * as Slot from '../models/Slot.js';
 
 // CREATE
 export const createSlot = async ({ provider_id, start_time, end_time, is_booked }) => {

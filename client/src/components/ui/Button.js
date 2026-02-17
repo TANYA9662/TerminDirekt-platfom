@@ -1,4 +1,9 @@
+import React from "react";
+import { useTranslation } from "react-i18next";
+
 const Button = ({ children, onClick, type = "button", variant = "primary", className = "" }) => {
+  const { t } = useTranslation();
+
   let baseClasses = "px-4 py-2 rounded-xl text-white transition";
 
   const variants = {
@@ -14,7 +19,7 @@ const Button = ({ children, onClick, type = "button", variant = "primary", class
       onClick={onClick}
       className={`${baseClasses} ${variants[variant] || variants.primary} ${className}`}
     >
-      {children}
+      {typeof children === "string" ? t(children, children) : children}
     </button>
   );
 };
