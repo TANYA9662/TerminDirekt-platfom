@@ -17,18 +17,16 @@ const getTranslated = (field, lang) => {
 };
 
 /* ================= NORMALIZE COMPANY DATA ================= */
-const normalizeCompanies = (companiesRaw) => {
-  return (companiesRaw || []).map(company => {
-    // services
-    let services = [];
-    if (Array.isArray(company.services)) services = company.services;
-    else if (typeof company.services === "string") {
-      try { services = JSON.parse(company.services); } catch { services = []; }
-    }
+const normalizeCompanies = (companiesRaw) =>
+  (companiesRaw || []).map((company) => {
+    const services = Array.isArray(company.services)
+      ? company.services
+      : typeof company.services === "string"
+        ? (() => { try { return JSON.parse(company.services); } catch { return []; } })()
+        : [];
 
-    // slots
     const slots = Array.isArray(company.slots)
-      ? company.slots.map(slot => ({
+      ? company.slots.map((slot) => ({
         ...slot,
         service_id: Number(slot.service_id),
         is_booked: !!slot.is_booked,
@@ -37,12 +35,11 @@ const normalizeCompanies = (companiesRaw) => {
       }))
       : [];
 
-    // images
-    const images = Array.isArray(company.images) && company.images.length > 0
-      ? company.images.map(img => ({ ...img, url: img.url || `/uploads/companies/${img.image_path}` }))
-      : [{ image_path: "default.png", url: DEFAULT_COMPANY_IMAGE }];
+    const images =
+      Array.isArray(company.images) && company.images.length > 0
+        ? company.images.map((img) => ({ ...img, url: img.url || `/uploads/companies/${img.image_path}` }))
+        : [{ image_path: "default.png", url: DEFAULT_COMPANY_IMAGE }];
 
-    // reviews
     const reviews = Array.isArray(company.reviews) ? company.reviews : [];
     const avg_rating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length : 0;
 
@@ -56,12 +53,11 @@ const normalizeCompanies = (companiesRaw) => {
       review_count: reviews.length,
     };
   });
-};
 
 /* ================= CATEGORY PAGE ================= */
 const CategoryPage = () => {
   const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const lang = i18n.language || "sr";
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
@@ -81,7 +77,7 @@ const CategoryPage = () => {
 
       // category info
       const catRes = await API.get(`/categories/${id}?lang=${lang}`);
-      setCategory(catRes.data);
+      setCategory(catRes.data || { name: "" });
 
       // companies list
       delete API.defaults.headers.common["Authorization"];
@@ -116,9 +112,10 @@ const CategoryPage = () => {
     if (!q) return setFilteredCompanies(companies);
 
     setFilteredCompanies(
-      companies.filter(c =>
-        getTranslated(c.name, lang).toLowerCase().includes(q) ||
-        c.services?.some(s => getTranslated(s.name, lang).toLowerCase().includes(q))
+      companies.filter(
+        (c) =>
+          getTranslated(c.name, lang).toLowerCase().includes(q) ||
+          c.services?.some((s) => getTranslated(s.name, lang).toLowerCase().includes(q))
       )
     );
   }, [search, companies, lang]);
@@ -153,9 +150,7 @@ const CategoryPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-6 py-14 space-y-8">
-        <h1 className="text-3xl font-semibold text-gray-800">
-          {category.name}
-        </h1>
+        <h1 className="text-3xl font-semibold text-gray-800">{category.name}</h1>
 
         <input
           type="text"
@@ -168,21 +163,22 @@ const CategoryPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCompanies.length === 0 ? (
             <p className="text-gray-500">{t("home.no_companies")}</p>
-          ) : filteredCompanies.map((company) => (
-            <CompanyCardCategory
-              key={company.id}
-              company={company}
-              onBook={() => {
-                if (!user) navigate("/login");
-                else if (user.role !== "user")
-                  alert("Samo korisnici mogu rezervisati");
-                else {
-                  setSelectedCompany(company);
-                  setBookingOpen(true);
-                }
-              }}
-            />
-          ))}
+          ) : (
+            filteredCompanies.map((company) => (
+              <CompanyCardCategory
+                key={company.id}
+                company={company}
+                onBook={() => {
+                  if (!user) navigate("/login");
+                  else if (user.role !== "user") alert("Samo korisnici mogu rezervisati");
+                  else {
+                    setSelectedCompany(company);
+                    setBookingOpen(true);
+                  }
+                }}
+              />
+            ))
+          )}
         </div>
       </div>
 
