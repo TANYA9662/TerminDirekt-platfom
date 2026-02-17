@@ -57,12 +57,12 @@ const normalizeCompanies = (companiesRaw) =>
 /* ================= CATEGORY PAGE ================= */
 const CategoryPage = () => {
   const { t, i18n } = useTranslation();
-  const lang = i18n.language || "sr";
+  const lang = i18n.language.split("-")[0] || "sr";
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
-  const [category, setCategory] = useState(null);
+  const [category, setCategory] = useState({ name: "" });
   const [companies, setCompanies] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
   const [search, setSearch] = useState("");
@@ -75,16 +75,13 @@ const CategoryPage = () => {
     try {
       setLoading(true);
 
-      // category info
       const catRes = await API.get(`/categories/${id}?lang=${lang}`);
       setCategory(catRes.data || { name: "" });
 
-      // companies list
       delete API.defaults.headers.common["Authorization"];
       const compRes = await API.get(`/categories/${id}/companies`);
       const companiesRaw = compRes.data || [];
 
-      // fetch full details for each company
       const detailedCompanies = await Promise.all(
         companiesRaw.map(async (company) => {
           const detailRes = await API.get(`/companies/${company.id}/details`);

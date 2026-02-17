@@ -12,7 +12,7 @@ const Header = () => {
   const { t, i18n } = useTranslation();
 
   const langMap = { rs: "sr", sr: "sr", en: "en", sv: "sv" };
-  const lang = langMap[i18n.language.split("-")[0]] || "en";
+  const lang = langMap[(i18n.language || "en").split("-")[0]] || "en";
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -22,8 +22,8 @@ const Header = () => {
       try {
         const res = await API.get(`/categories?lang=${lang}`);
         setCategories(res.data || []);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        setCategories([]);
       }
     };
     fetchCategories();
@@ -73,7 +73,7 @@ const Header = () => {
             onChange={(e) => {
               const newLang = langMap[e.target.value] || "en";
               i18n.changeLanguage(e.target.value);
-              setLanguageHeader(newLang);
+              setLanguageHeader?.(newLang);
             }}
             className="hidden md:block px-2 py-1 rounded border border-gray-400"
           >
@@ -179,7 +179,7 @@ const Header = () => {
                 onChange={(e) => {
                   const newLang = langMap[e.target.value] || "en";
                   i18n.changeLanguage(e.target.value);
-                  setLanguageHeader(newLang);
+                  setLanguageHeader?.(newLang);
                 }}
                 className="w-full px-3 py-2 border rounded-lg"
               >
