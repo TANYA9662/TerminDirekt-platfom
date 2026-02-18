@@ -20,9 +20,7 @@ const Header = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        console.log("Fetching categories from:", process.env.REACT_APP_API_URL);
         const res = await API.get(`/categories?lang=${lang}`);
-        console.log("Categories response:", res.data);
         setCategories(res.data || []);
       } catch (err) {
         console.error("Error fetching categories:", err);
@@ -31,7 +29,6 @@ const Header = () => {
     };
     fetchCategories();
   }, [lang]);
-
 
   const handleAccountClick = () => {
     if (!user) return navigate("/login");
