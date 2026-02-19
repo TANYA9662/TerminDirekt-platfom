@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { CompanyContext } from "../../context/CompanyContext";
 import API from "../../api";
 import { useTranslation } from "react-i18next";
@@ -8,7 +8,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function ImagesStep() {
   const { t } = useTranslation();
-  const { currentStepIndex, steps } = useOutletContext();
   const { company, setCompany } = useContext(CompanyContext);
   const navigate = useNavigate();
 
@@ -39,6 +38,14 @@ export default function ImagesStep() {
     }
   };
 
+  // Odredi sledeći step na osnovu company state
+  const getNextStep = () => {
+    if (!company?.name?.trim() || !company?.description?.trim()) return "company";
+    if (!Array.isArray(company.images) || company.images.length === 0) return "images";
+    if (!Array.isArray(company.services) || company.services.length === 0) return "services";
+    return null;
+  };
+
   const handleNext = async () => {
     if (!localFiles.length && !uploadedImages.length) {
       return toast.error(t("onboarding.add_at_least_one_image"));
@@ -63,7 +70,8 @@ export default function ImagesStep() {
         toast.success(t("onboarding.images_saved"));
       }
 
-      navigate(`/onboarding/${steps[currentStepIndex + 1]}`);
+      const nextStep = getNextStep();
+      if (nextStep) navigate(`/onboarding/${nextStep}`);
     } catch (err) {
       console.error("Upload error:", err);
       toast.error(err.response?.data?.message || err.message || t("onboarding.error_saving_images"));
@@ -72,7 +80,13 @@ export default function ImagesStep() {
     }
   };
 
-  const handleBack = () => navigate(`/onboarding/${steps[currentStepIndex - 1]}`);
+  const handleBack = () => {
+    if (!company?.name?.trim() || !company?.description?.trim()) {
+      navigate("/onboarding/company");
+    } else {
+      navigate("/onboarding/company"); // možeš promeniti logiku ako želiš tačno prethodni step
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-200 py-10">

@@ -1,27 +1,14 @@
 import React, { useState, useContext, useEffect } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { CompanyContext } from "../../context/CompanyContext";
 import API from "../../api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-// Ovde možeš kasnije zameniti sa pravim i18n fajlom
-const translations = {
-  addServices: "Dodajte usluge",
-  enterNameCategory: "Unesite naziv i kategoriju usluge",
-  serviceName: "Naziv usluge",
-  servicePrice: "Cena (RSD)",
-  chooseCategory: "Izaberite kategoriju",
-  add: "Dodaj",
-  back: "Nazad",
-  finish: "Završi",
-  saveError: "Greška pri čuvanju usluga.",
-  emptyList: "Molimo dodajte bar jednu uslugu.",
-};
+import { useTranslation } from "react-i18next";
 
 export default function ServicesStep() {
-  const { currentStepIndex, steps } = useOutletContext();
-  const { company, updateCompanyServices, setCompanyServices } = useContext(CompanyContext);
+  const { t } = useTranslation();
+  const { company, updateCompanyServices, setCompany } = useContext(CompanyContext);
   const navigate = useNavigate();
 
   const [services, setServices] = useState(() => Array.isArray(company?.services) ? [...company.services] : []);
@@ -48,17 +35,14 @@ export default function ServicesStep() {
   // ---- Add new service ----
   const handleAddService = () => {
     if (!newServiceName.trim() || !newServiceCategory) {
-      toast.error(translations.enterNameCategory);
+      toast.error(t("onboarding.enterNameCategory"));
       return;
     }
 
     const price = newServicePrice ? Number(newServicePrice) : 0;
     const tempId = `temp-${Date.now()}`;
 
-    setServices([
-      ...services,
-      { tempId, name: newServiceName.trim(), price, category_id: Number(newServiceCategory) }
-    ]);
+    setServices([...services, { tempId, name: newServiceName.trim(), price, category_id: Number(newServiceCategory) }]);
     setNewServiceName("");
     setNewServicePrice("");
     setNewServiceCategory("");
@@ -76,10 +60,18 @@ export default function ServicesStep() {
     setServices(services.filter((_, i) => i !== idx));
   };
 
+  // ---- Odredi sledeći onboarding step ----
+  const getNextStep = () => {
+    if (!company?.name?.trim() || !company?.description?.trim()) return "company";
+    if (!Array.isArray(company.images) || company.images.length === 0) return "images";
+    if (!Array.isArray(services) || services.length === 0) return "services";
+    return null;
+  };
+
   // ---- Save services and navigate ----
   const handleNext = async () => {
     if (!services.length) {
-      toast.error(translations.emptyList);
+      toast.error(t("onboarding.emptyList"));
       return;
     }
 
@@ -95,26 +87,29 @@ export default function ServicesStep() {
       }));
 
       const updatedServices = await updateCompanyServices(payload);
-      setCompanyServices(updatedServices);
+      setCompany(prev => ({ ...prev, services: updatedServices }));
 
-      navigate(`/onboarding/${steps[currentStepIndex + 1]}`);
+      const nextStep = getNextStep();
+      if (nextStep) navigate(`/onboarding/${nextStep}`);
     } catch (err) {
-      console.error("Greška pri čuvanju usluga:", err);
-      toast.error(translations.saveError);
+      console.error("Greška pri čuvanju servisa:", err);
+      toast.error(t("onboarding.saveError"));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBack = () => navigate(`/onboarding/${steps[currentStepIndex - 1]}`);
+  const handleBack = () => {
+    if (!company?.images || company.images.length === 0) navigate("/onboarding/images");
+    else navigate("/onboarding/images"); // prethodni logički step
+  };
 
   return (
     <div className="min-h-screen bg-gray-200 py-10">
       <div className="max-w-7xl mx-auto px-6">
         <div className="bg-white p-6 rounded-3xl shadow-md space-y-6">
-          <h3 className="text-2xl font-semibold text-gray-800">{translations.addServices}</h3>
+          <h3 className="text-2xl font-semibold text-gray-800">{t("onboarding.addServices")}</h3>
 
-          {/* Lista servisa */}
           <ul className="space-y-2">
             {services.map((srv, idx) => (
               <li key={srv.id ?? srv.tempId ?? idx} className="flex gap-2 items-center">
@@ -134,24 +129,23 @@ export default function ServicesStep() {
                   onClick={() => handleRemoveService(idx)}
                   className="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition"
                 >
-                  Obriši
+                  {t("companyDashboard.delete")}
                 </button>
               </li>
             ))}
           </ul>
 
-          {/* Dodaj novu uslugu */}
           <div className="flex flex-wrap gap-2 items-center mt-4">
             <input
               type="text"
-              placeholder={translations.serviceName}
+              placeholder={t("onboarding.serviceName")}
               value={newServiceName}
               onChange={(e) => setNewServiceName(e.target.value)}
               className="border bg-gray-100 px-3 py-2 rounded-xl flex-1 focus:outline-none focus:ring-2 focus:ring-red-600"
             />
             <input
               type="number"
-              placeholder={translations.servicePrice}
+              placeholder={t("onboarding.servicePrice")}
               value={newServicePrice}
               onChange={(e) => setNewServicePrice(e.target.value)}
               className="border bg-gray-100 px-3 py-2 rounded-xl w-36 focus:outline-none focus:ring-2 focus:ring-red-600"
@@ -161,7 +155,7 @@ export default function ServicesStep() {
               onChange={(e) => setNewServiceCategory(e.target.value)}
               className="border bg-gray-100 px-3 py-2 rounded-xl w-48 focus:outline-none focus:ring-2 focus:ring-red-600"
             >
-              <option value="">{translations.chooseCategory}</option>
+              <option value="">{t("onboarding.chooseCategory")}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
@@ -171,25 +165,24 @@ export default function ServicesStep() {
               disabled={loading}
               className={`px-4 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
             >
-              {translations.add}
+              {t("onboarding.add")}
             </button>
           </div>
 
-          {/* Dugmad Back / Finish */}
           <div className="flex justify-between mt-6">
             <button
               onClick={handleBack}
               disabled={loading}
               className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-gray-600 hover:bg-gray-700 transition"}`}
             >
-              {translations.back}
+              {t("onboarding.back")}
             </button>
             <button
               onClick={handleNext}
               disabled={loading}
               className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
             >
-              {loading ? "Čuvanje..." : translations.finish}
+              {loading ? t("onboarding.saving") : t("onboarding.finish")}
             </button>
           </div>
         </div>

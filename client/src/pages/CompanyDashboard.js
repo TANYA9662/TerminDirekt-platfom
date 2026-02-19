@@ -3,7 +3,7 @@ import React, { useState, useContext, useEffect, useRef } from "react";
 //import { useNavigate } from "react-router-dom";
 import { CompanyContext } from "../context/CompanyContext";
 import CompanyImageUpload from "../components/company/CompanyImageUpload";
-import { absoluteUrl } from "../utils/imageUtils";
+//import { absoluteUrl } from "../utils/imageUtils";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import API from "../api";
@@ -43,19 +43,24 @@ const CompanyDashboard = () => {
   const colRef0 = useRef(null);
   const colRef1 = useRef(null);
   const colRef2 = useRef(null);
-  const initializedRef = useRef(false);
+  //const initializedRef = useRef(false);
 
 
   // ---- Load company data, slots, categories ----
   useEffect(() => {
     if (!company?.id) return;
-    if (initializedRef.current) return;
 
     setTempName(getTranslated(company.name, lang) || "");
     setTempDescription(getTranslated(company.description, lang) || "");
     setServices(Array.isArray(company.services) ? company.services : []);
     setSlots(Array.isArray(company.slots) ? company.slots : []);
+    setLoading(false);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [company?.id, lang]);
+
+
+  useEffect(() => {
     const loadCategories = async () => {
       try {
         const res = await API.get("/categories");
@@ -65,10 +70,11 @@ const CompanyDashboard = () => {
         setCategories([]);
       }
     };
+
     loadCategories();
-    initializedRef.current = true;
-    setLoading(false);
-  }, [company, lang, t]);
+  }, [t]);
+
+
 
   // ---- IntersectionObserver za animacije kolona ----
   useEffect(() => {
@@ -87,23 +93,27 @@ const CompanyDashboard = () => {
     return () => observer.disconnect();
   }, []);
 
-  const handleDeleteImage = async (index) => {
+  const handleDeleteImage = async (id) => {
     if (!window.confirm("Obrisati sliku?")) return;
-    const image = company.images[index];
+    const image = company.images.find(img => img.id === id);
     if (!image?.id) return;
 
     try {
       await API.delete(`/companies/images/${image.id}`);
-      setCompanyImages(company.images.filter((_, i) => i !== index));
+      setCompanyImages(prev => prev.filter(img => img.id !== id));
       toast.info("Slika obrisana");
     } catch (err) {
       console.error("Greška pri brisanju slike:", err);
       toast.error("Greška pri brisanju slike");
     }
   };
+  const uniqueImages = (company.images || []).reduce((acc, img) => {
+    if (!img.id || !acc.find(i => i.id === img.id)) acc.push(img);
+    return acc;
+  }, []);
 
   // ---- Services handlers ----
-  const handleAddService = (e) => {
+  const handleAddService = async (e) => {
     e.preventDefault();
     const categoryIdNum = Number(newServiceCategoryId);
     const priceNum = Number(newServicePrice);
@@ -121,19 +131,31 @@ const CompanyDashboard = () => {
       category_id: categoryIdNum,
     };
 
-    // Dodaj u services i odmah se prikazuje u dropdown
+    // Dodaj privremeno u state da odmah vidimo
     setServices(prev => [...prev, newService]);
-    setNewServiceId(tempId);
+
+    try {
+      // Sačuvaj odmah u backend-u
+      const savedService = await updateCompanyServices([newService]); // backend vraća array sa id
+      if (savedService.length) {
+        const realService = savedService[0];
+        setServices(prev => prev.map(s =>
+          s.tempId === tempId ? { ...realService, tempId: undefined } : s
+        ));
+        setNewServiceId(realService.id); // postavi novi id za dropdown
+        toast.success(t("companyDashboard.service_added"));
+      }
+    } catch (err) {
+      console.error("Greška pri čuvanju nove usluge:", err);
+      toast.error(t("companyDashboard.service_save_error") || "Greška pri čuvanju usluge");
+    }
 
     // Reset forme i fokus na naziv
     setNewServiceName("");
     setNewServicePrice("");
     setNewServiceCategoryId("");
     document.getElementById("newServiceNameInput")?.focus();
-
-    toast.success(t("companyDashboard.service_added"));
   };
-
 
   const handleDeleteService = (id) => {
     setServices(prev => prev.filter(s => String(s.id ?? s.tempId) !== String(id)));
@@ -247,6 +269,10 @@ const CompanyDashboard = () => {
       // 7️⃣ Sačuvaj slotove u backend
       const savedSlots = await updateCompanySlots(slotsWithRealIds);
       setSlots(savedSlots);
+      setCompany(prev => ({
+        ...prev,
+        slots: savedSlots
+      }));
 
       toast.success("Sve izmene sačuvane i termini trajno dodati");
     } catch (err) {
@@ -353,23 +379,17 @@ const CompanyDashboard = () => {
       >
         <option value="">{t("companyDashboard.select_service")}</option>
         {services
-          .filter(s => s.id) // prikaži samo usluge sa realnim id
+          .filter(s => s.id)   // samo sačuvane usluge
           .map(s => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
-          ))
-        }
+          ))}
       </select>
-
-      {services.some(s => !s.id) && (
-        <p className="text-sm text-yellow-600 mt-1">
-          {t("save service first") || "Sačuvajte novu uslugu pre dodavanja termina"}
-        </p>
-      )}
       <button type="submit" className="border border-gray-400 shadow-2xl text-gray-600 px-4 py-2 rounded-lg hover:bg-accentLight transition">{t("companyDashboard.add_slot")}</button>
     </form>
   );
+
 
   if (loading) return <div className="flex justify-center items-center min-h-screen text-gray-900 bg-gray-100">{t("companyDashboard.loading")}</div>;
   if (!company) return <div className="p-6 text-center text-gray-900">{t("companyDashboard.company_not_found")}</div>;
@@ -379,40 +399,38 @@ const CompanyDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* KOLUMNA 0 */}
         <div ref={colRef0} className="transition-all duration-700 ease-out space-y-6">
+          {/* Info o firmi */}
           <div className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
             <h2 className="text-xl font-semibold text-gray-800">{t("companyDashboard.company_info")}</h2>
-            <input type="text" value={tempName} onChange={e => setTempName(e.target.value)} placeholder="Naziv firme" className="w-full border border-gray-300 p-2 rounded-lg" />
-            <textarea value={tempDescription} onChange={e => setTempDescription(e.target.value)} placeholder="Opis firme" className="w-full border border-gray-300 p-2 rounded-lg" />
+            <input
+              type="text"
+              value={tempName}
+              onChange={e => setTempName(e.target.value)}
+              placeholder="Naziv firme"
+              className="w-full border border-gray-300 p-2 rounded-lg"
+            />
+            <textarea
+              value={tempDescription}
+              onChange={e => setTempDescription(e.target.value)}
+              placeholder="Opis firme"
+              className="w-full border border-gray-300 p-2 rounded-lg"
+            />
           </div>
 
+          {/* Slike firme */}
           <div className="bg-white ring-1 ring-gray-300 rounded-3xl shadow-md p-6 space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
             <h2 className="text-xl font-semibold text-gray-800">{t("companyDashboard.images")}</h2>
-            <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide relative z-10">
-              {(company.images || []).map((img, idx) => (
-                <div
-                  key={img.id ?? `img-${idx}`}
-                  className="relative w-40 h-40 flex-shrink-0 group overflow-hidden rounded-lg ring-1 ring-gray-300 shadow-md"
-                >
-                  <img
-                    src={absoluteUrl(img.url)}
-                    alt={company.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    onError={(e) =>
-                      (e.target.src = absoluteUrl("/uploads/companies/default.png"))
-                    }
-                  />
-                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <button
-                      onClick={() => handleDeleteImage(idx)}
-                      className="bg-red-600 text-white px-4 py-2 rounded-xl font-semibold shadow-lg hover:bg-red-700 transition-all duration-300"
-                    >
-                      {t("companyDashboard.delete")}
-                    </button>
-                  </div>
-                </div>
-              ))}
+
+            <div className="mt-4">
+              <CompanyImageUpload
+                companyId={company.id}
+                company={company}
+                onDeleteImage={handleDeleteImage}
+                existingImages={uniqueImages}
+                className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"
+              />
+
             </div>
-            <CompanyImageUpload companyId={company.id} company={company} setCompany={setCompany} showExistingImages={false} />
           </div>
         </div>
 
@@ -432,12 +450,15 @@ const CompanyDashboard = () => {
       </div>
 
       <div className="mt-6">
-        <button onClick={handleFinish} className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-2 rounded-3xl shadow-md transition">{t("companyDashboard.save_changes")}</button>
+        <button
+          onClick={handleFinish}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-2 rounded-3xl shadow-md transition"
+        >
+          {t("companyDashboard.save_changes")}
+        </button>
       </div>
     </div>
-
   );
 };
-
 
 export default CompanyDashboard;

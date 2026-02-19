@@ -42,7 +42,7 @@ export default function OnboardingLayout() {
   else if (servicesSafe.length === 0) currentStepIndex = 2;
 
   return (
-    <div className="min-h-screen bg-gray-200 flex flex-col items-center p-6">
+    <div className="min-h-screen bg-gray-200 flex flex-col items-center p-14">
       <div className="max-w-3xl w-full space-y-6">
         <h2 className="text-2xl font-bold text-center text-gray-800">
           {t("onboarding.welcome")}
@@ -50,7 +50,7 @@ export default function OnboardingLayout() {
 
         <ProgressBar currentStep={currentStepIndex + 1} steps={steps} />
 
-        <div className="p-6 bg-gray-300 rounded-2xl shadow-lg">
+        <div className="p-9 bg-gray-300 rounded-2xl shadow-lg">
           <Outlet context={{ currentStepIndex, steps }} />
         </div>
       </div>

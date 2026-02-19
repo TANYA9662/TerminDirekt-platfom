@@ -87,7 +87,7 @@ export const CompanyProvider = ({ children }) => {
 
       setCompany(prev => {
         const updated = { ...prev, ...data };
-        setCompanyComplete(isCompanyComplete(updated));
+        setCompanyComplete(isCompanyComplete(updated)); // ⬅️ obavezno ažuriraj
         return updated;
       });
 
@@ -97,6 +97,7 @@ export const CompanyProvider = ({ children }) => {
       throw err;
     }
   };
+
 
   /* ================= SET COMPANY IMAGES ================= */
   const setCompanyImages = (images) => {

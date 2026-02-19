@@ -22,7 +22,7 @@ import OnboardingGuard from "./components/auth/OnboardingGuard";
 
 export default function AppRoutes() {
   const { user, loading } = useContext(AuthContext);
-  const { companyComplete: contextComplete, status } = useContext(CompanyContext);
+  const { company, status } = useContext(CompanyContext);
 
   if (loading || status === "loading") {
     return (
@@ -31,6 +31,14 @@ export default function AppRoutes() {
       </div>
     );
   }
+
+  // Funkcija koja određuje sledeći onboarding step
+  const getNextOnboardingStep = (company) => {
+    if (!company?.name?.trim() || !company?.description?.trim()) return "company";
+    if (!Array.isArray(company.images) || company.images.length === 0) return "images";
+    if (!Array.isArray(company.services) || company.services.length === 0) return "services";
+    return null;
+  };
 
   // 🚫 Guest
   if (!user) {
@@ -48,18 +56,10 @@ export default function AppRoutes() {
     );
   }
 
-  //  Firma
+  // Firma
   if (user.role === "company") {
-    const oldCompanyComplete =
-      user.company &&
-      user.company.name?.trim() &&
-      user.company.description?.trim() &&
-      Array.isArray(user.company.images) &&
-      user.company.images.length > 0 &&
-      Array.isArray(user.company.services) &&
-      user.company.services.length > 0;
-
-    const finalCompanyComplete = oldCompanyComplete || contextComplete;
+    const nextStep = getNextOnboardingStep(company);
+    const finalCompanyComplete = nextStep === null;
 
     return (
       <Routes>
@@ -88,7 +88,7 @@ export default function AppRoutes() {
           path="*"
           element={
             <Navigate
-              to={finalCompanyComplete ? "/company-dashboard" : "/onboarding/company"}
+              to={finalCompanyComplete ? "/company-dashboard" : `/onboarding/${nextStep}`}
               replace
             />
           }
@@ -97,7 +97,7 @@ export default function AppRoutes() {
     );
   }
 
-  //  Obični korisnik
+  // Obični korisnik
   return (
     <Routes>
       <Route path="/" element={<Home />} />

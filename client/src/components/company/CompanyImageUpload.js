@@ -45,33 +45,38 @@ const CompanyImageUpload = ({ companyId, company, onUploadSuccess, onDeleteImage
 
   return (
     <div className="bg-gray-200 p-4 rounded-2xl shadow space-y-4">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
         {(company.images || []).map(img => (
-          <div key={img.id || img.url} className="relative group">
+          <div
+            key={img.id || img.url}
+            className="relative w-full overflow-hidden rounded-xl shadow-md ring-1 ring-gray-300"
+            style={{ aspectRatio: "4 / 3" }} // sve slike imaju uniformni odnos širina/visina
+          >
             <img
               src={img.url || "/uploads/companies/default.png"}
               alt={company.name || t("companyDashboard.company_image")}
-              className="w-full h-28 object-cover rounded-xl"
+              className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
               onError={e => { e.target.onerror = null; e.target.src = "/uploads/companies/default.png"; }}
             />
             {!img.isDefault && (
               <button
                 onClick={() => handleDelete(img.id)}
-                className="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100"
+                className="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 py-1 rounded opacity-0 hover:opacity-100 hover:bg-red-700 transition"
               >
-                ✕
+                Delete
               </button>
             )}
           </div>
         ))}
       </div>
 
-      <input type="file" multiple accept="image/*" onChange={handleChange} className="block w-full text-sm" />
+
+      <input type="file" multiple accept="image/*" onChange={handleChange} className="block w-full text-sm mt-2" />
 
       <button
         onClick={uploadImages}
         disabled={loading || files.length === 0}
-        className="bg-accent text-cardBg px-5 py-2 rounded-xl font-semibold hover:bg-accentLight transition disabled:opacity-50"
+        className="bg-accent text-cardBg px-5 py-2 rounded-xl font-semibold hover:bg-accentLight transition disabled:opacity-50 mt-2"
       >
         {loading ? t("companyDashboard.uploading") : t("upload")}
       </button>
