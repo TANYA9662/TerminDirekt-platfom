@@ -87,7 +87,7 @@ export const CompanyProvider = ({ children }) => {
 
       setCompany(prev => {
         const updated = { ...prev, ...data };
-        setCompanyComplete(isCompanyComplete(updated)); // ⬅️ obavezno ažuriraj
+        setCompanyComplete(isCompanyComplete(updated));
         return updated;
       });
 
@@ -97,7 +97,6 @@ export const CompanyProvider = ({ children }) => {
       throw err;
     }
   };
-
 
   /* ================= SET COMPANY IMAGES ================= */
   const setCompanyImages = (images) => {
@@ -113,17 +112,14 @@ export const CompanyProvider = ({ children }) => {
     if (!company.id) throw new Error("Company ID nije definisan");
 
     try {
-      const res = await API.put(
-        `/companies/${company.id}/services`,
-        { services }
-      );
-
+      const res = await API.put(`/companies/${company.id}/services`, { services });
       const updatedServices = res.data.services || [];
 
-      setCompany(prev => ({
-        ...prev,
-        services: updatedServices
-      }));
+      setCompany(prev => {
+        const updated = { ...prev, services: updatedServices };
+        setCompanyComplete(isCompanyComplete(updated)); // ⬅️ automatski update complete
+        return updated;
+      });
 
       return updatedServices;
     } catch (err) {
@@ -137,17 +133,14 @@ export const CompanyProvider = ({ children }) => {
     if (!company.id) throw new Error("Company ID nije definisan");
 
     try {
-      const res = await API.put(
-        `/companies/${company.id}/slots`,
-        { slots }
-      );
-
+      const res = await API.put(`/companies/${company.id}/slots`, { slots });
       const updatedSlots = res.data.slots || [];
 
-      setCompany(prev => ({
-        ...prev,
-        slots: updatedSlots
-      }));
+      setCompany(prev => {
+        const updated = { ...prev, slots: updatedSlots };
+        setCompanyComplete(isCompanyComplete(updated)); // ⬅️ automatski update complete
+        return updated;
+      });
 
       return updatedSlots;
     } catch (err) {
@@ -156,16 +149,9 @@ export const CompanyProvider = ({ children }) => {
     }
   };
 
-
-
-  /* ================= SAVE EVERYTHING (OPTIONAL) ================= */
+  /* ================= SAVE EVERYTHING ================= */
   const saveCompanyData = async ({ name, description, services, slots }) => {
-    const updatedCompany = await updateCompany({
-      id: company.id,
-      name,
-      description,
-    });
-
+    const updatedCompany = await updateCompany({ id: company.id, name, description });
     const updatedServices = await updateCompanyServices(services);
     const updatedSlots = await updateCompanySlots(slots);
 

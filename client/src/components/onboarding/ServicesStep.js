@@ -80,7 +80,6 @@ export default function ServicesStep() {
     try {
       const payload = services.map(s => ({
         ...(s.id ? { id: s.id } : {}),
-        tempId: s.tempId,
         name: s.name,
         price: Number(s.price),
         category_id: Number(s.category_id),

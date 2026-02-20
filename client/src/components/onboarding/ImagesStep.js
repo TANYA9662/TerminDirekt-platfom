@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
 export default function ImagesStep() {
   const { t } = useTranslation();
   const { company, setCompany } = useContext(CompanyContext);
@@ -38,7 +40,6 @@ export default function ImagesStep() {
     }
   };
 
-  // Odredi sledeći step na osnovu company state
   const getNextStep = () => {
     if (!company?.name?.trim() || !company?.description?.trim()) return "company";
     if (!Array.isArray(company.images) || company.images.length === 0) return "images";
@@ -81,11 +82,7 @@ export default function ImagesStep() {
   };
 
   const handleBack = () => {
-    if (!company?.name?.trim() || !company?.description?.trim()) {
-      navigate("/onboarding/company");
-    } else {
-      navigate("/onboarding/company"); // možeš promeniti logiku ako želiš tačno prethodni step
-    }
+    navigate("/onboarding/company");
   };
 
   return (
@@ -107,7 +104,7 @@ export default function ImagesStep() {
             {uploadedImages.map((img, idx) => (
               <div key={`uploaded-${idx}`} className="relative w-32 h-32 flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
                 <img
-                  src={`http://localhost:3001${img.image_path}`}
+                  src={`${API_URL}${img.image_path}`}
                   alt={`${t("onboarding.company")} ${idx}`}
                   className="w-full h-full object-cover"
                 />
