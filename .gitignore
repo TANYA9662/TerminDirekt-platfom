@@ -27,3 +27,6 @@ yarn-error.log*
 termin_direkt_backup.dump
 
 Server/public/uploads/
+
+termin_full.sql
+termin_local_data.sql
