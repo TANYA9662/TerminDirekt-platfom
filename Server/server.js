@@ -1,22 +1,19 @@
+// Server/server.js
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { pool } from './config/db.js';
-import { PORT, FRONTEND_URLS } from './config/env.js';
+import { FRONTEND_URLS } from './config/env.js';
 import apiRoutes from './routes/api.js';
 import uploadRouter from './routes/uploads.js';
 import { errorHandler } from './middlewares/errorMiddleware.js';
-import { langMiddleware } from './middlewares/langMiddleware.js'; // aktiviramo middleware
-
-
-
+import { langMiddleware } from './middlewares/langMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
 
 // ================== CORS ==================
 const allowedOrigins = Array.isArray(FRONTEND_URLS)
@@ -25,15 +22,10 @@ const allowedOrigins = Array.isArray(FRONTEND_URLS)
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // Postman / server-side requests
-
-    if (
-      allowedOrigins.includes(origin) ||
-      origin?.includes('.vercel.app')
-    ) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || origin?.includes('.vercel.app')) {
       return callback(null, true);
     }
-
     console.log('❌ CORS blocked for:', origin);
     callback(new Error('CORS nije dozvoljen za ovaj origin: ' + origin));
   },
@@ -51,7 +43,7 @@ app.use((req, res, next) => {
 });
 
 // ================== Language Middleware ==================
-app.use(langMiddleware); // req.lang će biti dostupan u svim rutama
+app.use(langMiddleware);
 
 // ================== Static Files ==================
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
@@ -66,7 +58,5 @@ app.use(errorHandler);
 // ================== Test Route ==================
 app.get('/', (req, res) => res.send('TerminDirekt API radi! 🚀'));
 
-// ================== Start Server ==================
-app.listen(PORT, () => {
-  console.log(`Server radi na portu ${PORT}`);
-});
+// ================== Export za serverless ==================
+export default app; 
