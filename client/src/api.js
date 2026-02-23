@@ -1,9 +1,14 @@
 import axios from "axios";
 import i18n from "./i18n";
 
-// Kreiramo instancu API-ja
+// Base URL bira prema env
+const baseURL =
+  process.env.NODE_ENV === "production"
+    ? "https://termin-direkt-backend.vercel.app/api" // backend deployed
+    : "http://localhost:3001/api";                  // lokalno
+
 const API = axios.create({
-  baseURL: `${process.env.REACT_APP_API_URL}/api`,
+  baseURL,
   withCredentials: true,
 });
 
@@ -11,12 +16,9 @@ const API = axios.create({
 API.defaults.headers.common["Accept-Language"] = i18n.language.split("-")[0];
 
 export const setLanguageHeader = (lang) => {
-  const shortLang = lang.split("-")[0];  // izvuče samo 'sr', 'en', 'sv'
-  API.defaults.headers.common["Accept-Language"] = shortLang;
+  API.defaults.headers.common["Accept-Language"] = lang.split("-")[0];
 };
 
-
-// Auth token
 export const setAuthToken = (token) => {
   if (token) {
     API.defaults.headers.common["Authorization"] = `Bearer ${token}`;

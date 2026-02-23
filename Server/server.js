@@ -1,4 +1,3 @@
-// Server/server.js
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -16,20 +15,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // ================== CORS ==================
-const allowedOrigins = Array.isArray(FRONTEND_URLS)
-  ? FRONTEND_URLS
-  : FRONTEND_URLS.split(',');
-
+const allowedOrigins = Array.isArray(FRONTEND_URLS) ? FRONTEND_URLS : FRONTEND_URLS.split(',');
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin?.includes('.vercel.app')) {
-      return callback(null, true);
-    }
-    console.log('❌ CORS blocked for:', origin);
+    if (allowedOrigins.includes(origin) || origin?.includes('.vercel.app')) return callback(null, true);
     callback(new Error('CORS nije dozvoljen za ovaj origin: ' + origin));
-  },
-  credentials: true
+  }, credentials: true
 }));
 
 // ================== Body parsers ==================
@@ -37,16 +29,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ================== DB Pool ==================
-app.use((req, res, next) => {
-  req.pool = pool;
-  next();
-});
+app.use((req, res, next) => { req.pool = pool; next(); });
 
 // ================== Language Middleware ==================
 app.use(langMiddleware);
 
 // ================== Static Files ==================
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+// app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // ================== Routes ==================
 app.use('/upload', uploadRouter);
@@ -58,5 +47,4 @@ app.use(errorHandler);
 // ================== Test Route ==================
 app.get('/', (req, res) => res.send('TerminDirekt API radi! 🚀'));
 
-// ================== Export za serverless ==================
-export default app; 
+export default app;

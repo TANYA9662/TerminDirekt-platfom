@@ -1,7 +1,6 @@
+// Server/seed/seed.js
 import 'dotenv/config';
 import { pool } from '../config/db.js';
-import * as User from '../models/User.js';
-import * as Service from '../models/Service.js';
 import * as Company from '../models/Company.js';
 import * as Provider from '../models/Provider.js';
 import * as Slot from '../models/Slot.js';
@@ -11,14 +10,10 @@ const seed = async () => {
   try {
     console.log('🔄 Seed pokrenut...');
 
-    // 0️⃣ Očisti tabele
-    await pool.query('DELETE FROM rezervacije');
-    await pool.query('DELETE FROM termini');
-    await pool.query('DELETE FROM providers');
-    await pool.query('DELETE FROM company_images');
-    await pool.query('DELETE FROM companies');
-    await pool.query('DELETE FROM services');
-    await pool.query('DELETE FROM users');
+    // 0️⃣ Očisti sve tabele koristeći TRUNCATE ... CASCADE
+    await pool.query(`
+      TRUNCATE rezervacije, termini, providers, company_images, companies, services, users RESTART IDENTITY CASCADE;
+    `);
     console.log('🧹 Sve tabele očišćene');
 
     // 1️⃣ Users
@@ -45,7 +40,6 @@ const seed = async () => {
       const company = await Company.createCompany(companyData);
       companies.push(company);
 
-      // Ubaci slike dinamicki
       for (const img of images) {
         await pool.query(
           'INSERT INTO company_images (company_id, image_path) VALUES ($1, $2)',
@@ -77,8 +71,6 @@ const seed = async () => {
       const slot = await Slot.createSlot(s);
       slots.push(slot);
     }
-
-
 
     // 6️⃣ Bookings
     await Booking.createBooking({ user_id: malena.id, slot_id: slots[0].id, service: 'Frizerski termin', status: 'confirmed' });

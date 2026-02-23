@@ -1,10 +1,16 @@
 import express from "express";
 import companyController from "../controllers/companyController.js";
 import { authenticateToken, requireRole, requireOwnerOrAdmin } from "../middlewares/authMiddleware.js";
-import upload from "../middlewares/uploadMiddleware.js";
 import { createCompanyWithCategory, addCompanyImages, addServices, addSlots } from "../models/Company.js";
+import multer from "multer";
+
 
 const router = express.Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(), // fajlovi se čuvaju u memoriji pre slanja u Cloudinary
+  limits: { fileSize: 5 * 1024 * 1024 }, // max 5MB po fajlu
+});
 
 /* ===== PUBLIC – SPECIFIC ===== */
 router.get("/categories/:id/companies/details", companyController.getCompaniesByCategoryWithDetails);

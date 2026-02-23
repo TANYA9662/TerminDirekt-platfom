@@ -2,14 +2,21 @@ import React, { useState } from "react";
 import API from "../../api";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
+import { absoluteUrl } from "../../utils/imageUtils";
+
+const DEFAULT_COMPANY_IMAGE = absoluteUrl("/uploads/companies/default.png");
 
 const CompanyImageUpload = ({ companyId, company, onUploadSuccess, onDeleteImage }) => {
   const { t } = useTranslation();
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => setFiles(Array.from(e.target.files));
+  // --- File input change ---
+  const handleChange = (e) => {
+    setFiles(Array.from(e.target.files));
+  };
 
+  // --- Upload images ---
   const uploadImages = async () => {
     if (!files.length || !companyId) return;
     setLoading(true);
@@ -21,7 +28,10 @@ const CompanyImageUpload = ({ companyId, company, onUploadSuccess, onDeleteImage
       const res = await API.post(`/companies/${companyId}/images`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      // Callback za update parent state
       if (onUploadSuccess) onUploadSuccess(res.data.images);
+
       setFiles([]);
       toast.success(t("companyDashboard.images_uploaded"));
     } catch (err) {
@@ -32,6 +42,7 @@ const CompanyImageUpload = ({ companyId, company, onUploadSuccess, onDeleteImage
     }
   };
 
+  // --- Delete image ---
   const handleDelete = async (id) => {
     if (!id || !onDeleteImage) return;
     try {
@@ -43,20 +54,27 @@ const CompanyImageUpload = ({ companyId, company, onUploadSuccess, onDeleteImage
     }
   };
 
+  // --- Map images for display ---
+  const displayImages = (company.images || []).map(img => ({
+    ...img,
+    url: absoluteUrl(img.url || img.image_path || ""),
+    isDefault: !img.url && !img.image_path,
+  }));
+
   return (
     <div className="bg-gray-200 p-4 rounded-2xl shadow space-y-4">
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-        {(company.images || []).map(img => (
+        {displayImages.map(img => (
           <div
             key={img.id || img.url}
             className="relative w-full overflow-hidden rounded-xl shadow-md ring-1 ring-gray-300"
-            style={{ aspectRatio: "4 / 3" }} // sve slike imaju uniformni odnos širina/visina
+            style={{ aspectRatio: "4 / 3" }}
           >
             <img
-              src={img.url || "/uploads/companies/default.png"}
+              src={img.url || DEFAULT_COMPANY_IMAGE}
               alt={company.name || t("companyDashboard.company_image")}
               className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
-              onError={e => { e.target.onerror = null; e.target.src = "/uploads/companies/default.png"; }}
+              onError={e => { e.target.onerror = null; e.target.src = DEFAULT_COMPANY_IMAGE; }}
             />
             {!img.isDefault && (
               <button
@@ -70,15 +88,20 @@ const CompanyImageUpload = ({ companyId, company, onUploadSuccess, onDeleteImage
         ))}
       </div>
 
-
-      <input type="file" multiple accept="image/*" onChange={handleChange} className="block w-full text-sm mt-2" />
+      <input
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={handleChange}
+        className="block w-full text-sm mt-2"
+      />
 
       <button
         onClick={uploadImages}
         disabled={loading || files.length === 0}
         className="bg-accent text-cardBg px-5 py-2 rounded-xl font-semibold hover:bg-accentLight transition disabled:opacity-50 mt-2"
       >
-        {loading ? t("companyDashboard.uploading") : t("upload")}
+        {loading ? <span>{t("companyDashboard.uploading")}...</span> : t("upload")}
       </button>
     </div>
   );

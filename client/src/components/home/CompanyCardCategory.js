@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { absoluteUrl } from "../../utils/imageUtils";
+import { mapCompanyImages, DEFAULT_COMPANY_IMAGE } from "../../utils/imageUtils";
 import { useTranslation } from "react-i18next";
-export const DEFAULT_COMPANY_IMAGE = absoluteUrl("/uploads/companies/default.png");
 
 const getTranslated = (field, lang) => {
   if (!field) return "";
@@ -30,7 +29,7 @@ const CompanyCardCategory = ({ company, onBook }) => {
   const lang = i18n.language;
   const [currentImage, setCurrentImage] = useState(0);
 
-  const images = (company.images?.map(img => ({ ...img, url: absoluteUrl(img.url) })) || []);
+  const images = mapCompanyImages(company.images || []);
   const imgUrl = images[currentImage]?.url || DEFAULT_COMPANY_IMAGE;
 
   useEffect(() => setCurrentImage(0), [company.id]);
@@ -42,7 +41,11 @@ const CompanyCardCategory = ({ company, onBook }) => {
 
   return (
     <div className="rounded-3xl overflow-hidden shadow-lg bg-white ring-1 ring-gray-300">
-      <img src={imgUrl} alt={getTranslated(company.name, lang)} className="w-full h-48 object-cover" />
+      <img
+        src={imgUrl}
+        alt={getTranslated(company.name, lang)}
+        className={`w-full h-48 object-cover ${images[currentImage]?.isDefault ? "opacity-60" : ""}`}
+      />
       <div className="p-4">
         <h3 className="font-bold text-lg">{getTranslated(company.name, lang)}</h3>
         <p className="text-gray-500">{company.city}</p>

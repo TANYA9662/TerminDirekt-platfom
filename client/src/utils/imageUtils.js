@@ -24,7 +24,7 @@ export const mapCompanyImages = (images = []) => {
     return {
       ...img,
       url: absoluteUrl(url),
-      isDefault: false,
+      isDefault: !img.url && !img.image_path, // true ako nema stvarne slike
     };
   });
 };

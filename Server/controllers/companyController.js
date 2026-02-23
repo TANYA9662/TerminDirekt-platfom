@@ -12,22 +12,31 @@ export const uploadCompanyImages = async (req, res) => {
     if (isNaN(companyId)) return res.status(400).json({ message: 'Nevažeći ID firme' });
     if (!req.files || req.files.length === 0) return res.status(400).json({ message: 'Nema fajlova za upload' });
 
-    const saved = [];
+    const uploaded = [];
+
     for (const file of req.files) {
-      // snimi u bazu
-      const r = await pool.query(
-        'INSERT INTO company_images (company_id, image_path) VALUES ($1, $2) RETURNING *',
-        [companyId, file.filename]
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "companies" },
+          (error, result) => error ? reject(error) : resolve(result)
+        );
+        stream.end(file.buffer);
+      });
+
+      // Snimi u bazu samo ako želiš, ili direktno vrati Cloudinary URL
+      await pool.query(
+        'INSERT INTO company_images (company_id, image_path) VALUES ($1, $2)',
+        [companyId, result.secure_url]
       );
 
-      const img = r.rows[0];
-      saved.push({
-        ...img,
-        url: buildImageUrl(img)   // pun URL
+      uploaded.push({
+        url: result.secure_url,
+        public_id: result.public_id
       });
     }
 
-    res.status(201).json({ images: saved });
+    res.status(201).json({ images: uploaded });
+
   } catch (err) {
     console.error('uploadCompanyImages error:', err);
     res.status(500).json({ message: 'Greška pri uploadu slika', error: err.message });

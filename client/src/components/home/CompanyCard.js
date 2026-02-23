@@ -10,8 +10,7 @@ const getTranslated = (field, lang) => {
   return "";
 };
 
-const Stars = ({ rating }) => {
-  const { t } = useTranslation();
+const Stars = ({ rating, t }) => {
   if (!rating) return <span className="text-sm text-gray-400">{t("companyCard.no_reviews")}</span>;
   const full = Math.floor(rating);
   const half = rating % 1 >= 0.5;
@@ -45,15 +44,22 @@ const CompanyCard = ({ company, onBook }) => {
   const goToCompany = () => navigate(`/companies/${company.id}`);
 
   return (
-    <div onClick={goToCompany} className="rounded-3xl flex flex-col bg-white ring-1 ring-gray-300 overflow-hidden shadow-md transition-transform duration-500 ease-in-out transform hover:-translate-y-2 hover:shadow-xl cursor-pointer relative">
+    <div
+      onClick={goToCompany}
+      className="rounded-3xl flex flex-col bg-white ring-1 ring-gray-300 overflow-hidden shadow-md transition-transform duration-500 ease-in-out transform hover:-translate-y-2 hover:shadow-xl cursor-pointer relative"
+    >
       <div className="relative w-full aspect-video overflow-hidden">
-        <img src={images[currentImage]?.url} alt={companyName} className="w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-105" />
+        <img
+          src={images[currentImage]?.url}
+          alt={companyName}
+          className={`w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-105 ${images[currentImage]?.isDefault ? "opacity-60" : ""}`}
+        />
       </div>
       <div className="p-4 flex flex-col gap-2 bg-white">
         <h3 className="text-lg font-semibold truncate text-gray-700">{companyName}</h3>
         {company.city && <p className="text-gray-500 text-sm">{company.city}</p>}
         <div className="flex items-center gap-2">
-          <Stars rating={company.avg_rating} />
+          <Stars rating={company.avg_rating} t={t} />
           {company.review_count > 0 && <span className="text-xs text-gray-400">({company.review_count})</span>}
         </div>
         <button
