@@ -75,7 +75,7 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
                 key={img.id || i}
                 src={absoluteUrl(img.url)}
                 alt={`${companyName} ${i}`}
-                onError={e => (e.target.src = absoluteUrl("/uploads/companies/default.png"))}
+                onError={e => { e.target.style.display = "none"; }}
                 className="w-32 h-32 object-cover rounded-xl shadow-sm flex-shrink-0 transition-transform duration-300 hover:scale-105 hover:shadow-lg"
               />
             ))}
@@ -124,9 +124,16 @@ const BookingModal = ({ company, onClose, onSubmit }) => {
                     : "bg-gray-100 text-gray-700 border-gray-200 hover:shadow-md"
                     }`}
                 >
-                  {new Date(slot.start_time).toLocaleString(
-                    lang === "en" ? "en-US" : lang === "sv" ? "sv-SE" : "sr-RS"
-                  )}
+                  {new Date(slot.start_time).toLocaleDateString(lang === "en" ? "en-GB" : lang === "sv" ? "sv-SE" : "sr-RS", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric"
+                  })}{" "}
+                  {new Date(slot.start_time).toLocaleTimeString(lang === "en" ? "en-GB" : lang === "sv" ? "sv-SE" : "sr-RS", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false
+                  })}
                 </div>
               ))}
             </div>

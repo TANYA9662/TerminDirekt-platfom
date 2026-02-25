@@ -1,108 +1,66 @@
 import React, { useState } from "react";
 import API from "../../api";
 import { toast } from "react-toastify";
-import { useTranslation } from "react-i18next";
-import { absoluteUrl } from "../../utils/imageUtils";
+import { buildImageUrl } from "../../utils/imageUtils";
 
-const DEFAULT_COMPANY_IMAGE = absoluteUrl("/uploads/companies/default.png");
+const CompanyImageUpload = ({ companyId, existingImages = [], onDeleteImage, onUploadSuccess }) => {
+  const [uploading, setUploading] = useState(false);
+  const [images, setImages] = useState(existingImages);
 
-const CompanyImageUpload = ({ companyId, company, onUploadSuccess, onDeleteImage }) => {
-  const { t } = useTranslation();
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
 
-  // --- File input change ---
-  const handleChange = (e) => {
-    setFiles(Array.from(e.target.files));
-  };
-
-  // --- Upload images ---
-  const uploadImages = async () => {
-    if (!files.length || !companyId) return;
-    setLoading(true);
-
-    const formData = new FormData();
-    files.forEach(f => formData.append("images", f));
-
+    setUploading(true);
     try {
+      const formData = new FormData();
+      files.forEach(file => formData.append("images", file));
+
       const res = await API.post(`/companies/${companyId}/images`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
-      // Callback za update parent state
-      if (onUploadSuccess) onUploadSuccess(res.data.images);
+      const newImages = res.data.map(img => ({ ...img, url: buildImageUrl(img) }));
 
-      setFiles([]);
-      toast.success(t("companyDashboard.images_uploaded"));
+      setImages(prev => [...prev, ...newImages]);
+      onUploadSuccess && onUploadSuccess(newImages);
+
+      toast.success("Slike uspešno dodate");
     } catch (err) {
-      console.error("Upload error:", err.response?.data || err);
-      toast.error(t("companyDashboard.error_upload_image"));
+      console.error("Greška pri upload-u slika:", err);
+      toast.error("Greška pri upload-u slika");
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   };
-
-  // --- Delete image ---
-  const handleDelete = async (id) => {
-    if (!id || !onDeleteImage) return;
-    try {
-      await onDeleteImage(id);
-      toast.info(t("companyDashboard.image_deleted"));
-    } catch (err) {
-      console.error("Delete error:", err);
-      toast.error(t("companyDashboard.error_delete_image"));
-    }
-  };
-
-  // --- Map images for display ---
-  const displayImages = (company.images || []).map(img => ({
-    ...img,
-    url: absoluteUrl(img.url || img.image_path || ""),
-    isDefault: !img.url && !img.image_path,
-  }));
 
   return (
-    <div className="bg-gray-200 p-4 rounded-2xl shadow space-y-4">
-      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-        {displayImages.map(img => (
-          <div
-            key={img.id || img.url}
-            className="relative w-full overflow-hidden rounded-xl shadow-md ring-1 ring-gray-300"
-            style={{ aspectRatio: "4 / 3" }}
-          >
-            <img
-              src={img.url || DEFAULT_COMPANY_IMAGE}
-              alt={company.name || t("companyDashboard.company_image")}
-              className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
-              onError={e => { e.target.onerror = null; e.target.src = DEFAULT_COMPANY_IMAGE; }}
-            />
-            {!img.isDefault && (
-              <button
-                onClick={() => handleDelete(img.id)}
-                className="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 py-1 rounded opacity-0 hover:opacity-100 hover:bg-red-700 transition"
-              >
-                Delete
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
+    <div>
       <input
         type="file"
         multiple
         accept="image/*"
-        onChange={handleChange}
-        className="block w-full text-sm mt-2"
+        onChange={handleFileChange}
+        disabled={uploading}
+        className="mb-4"
       />
-
-      <button
-        onClick={uploadImages}
-        disabled={loading || files.length === 0}
-        className="bg-accent text-cardBg px-5 py-2 rounded-xl font-semibold hover:bg-accentLight transition disabled:opacity-50 mt-2"
-      >
-        {loading ? <span>{t("companyDashboard.uploading")}...</span> : t("upload")}
-      </button>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {images.map(img => (
+          <div key={img.id} className="relative">
+            <img
+              src={buildImageUrl(img)}
+              alt="Company"
+              className="rounded-lg w-full h-32 object-cover"
+            />
+            <button
+              onClick={() => onDeleteImage(img.id)}
+              className="absolute top-1 right-1 bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition"
+            >
+              Obriši
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

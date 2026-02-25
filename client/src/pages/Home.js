@@ -8,10 +8,9 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
+import { mapCompanyImages } from '../utils/imageUtils';
 
-const normalizeCity = (value) => value?.trim().toLowerCase();
-
-/* ===== MULTI LANGUAGE HELPER ===== */
+// ===== MULTI LANGUAGE HELPER =====
 const getTranslated = (field, lang) => {
   if (!field) return "";
   if (typeof field === "string") return field;
@@ -21,15 +20,19 @@ const getTranslated = (field, lang) => {
   return "";
 };
 
+// ===== NORMALIZE COMPANIES =====
 const normalizeCompanies = (data, lang) => {
   return (data || []).map((company) => {
     let services = [];
     if (Array.isArray(company.services)) services = company.services;
     else if (typeof company.services === "string") {
-      try { services = JSON.parse(company.services); } catch { services = []; }
+      try {
+        services = JSON.parse(company.services);
+      } catch {
+        services = [];
+      }
     }
 
-    // Map services names to current language
     services = services.map((s) => ({
       ...s,
       name: getTranslated(s.name || s.title, lang),
@@ -37,7 +40,7 @@ const normalizeCompanies = (data, lang) => {
     }));
 
     const slots = Array.isArray(company.slots)
-      ? company.slots.map(slot => ({
+      ? company.slots.map((slot) => ({
         ...slot,
         service_id: Number(slot.service_id),
         start_time: slot.start_time,
@@ -46,14 +49,19 @@ const normalizeCompanies = (data, lang) => {
       }))
       : [];
 
-    const images =
-      Array.isArray(company.images) && company.images.length > 0
-        ? company.images
-        : [{ id: "default", url: "/uploads/companies/default.png", isDefault: true }];
+    const images = mapCompanyImages(company.images);
 
-    return { ...company, services, slots, images, displayName: getTranslated(company.name, lang) };
+    return {
+      ...company,
+      services,
+      slots,
+      images,
+      displayName: getTranslated(company.name, lang),
+    };
   });
 };
+
+const normalizeCity = (value) => value?.trim().toLowerCase();
 
 const Home = () => {
   const { t, i18n } = useTranslation();
@@ -78,7 +86,7 @@ const Home = () => {
         const normalized = normalizeCompanies(data, currentLang);
 
         setCompanies(normalized);
-        setCities([...new Set(normalized.map(c => c.city).filter(Boolean))]);
+        setCities([...new Set(normalized.map((c) => c.city).filter(Boolean))]);
       } catch (err) {
         console.error(err);
         setCompanies([]);
@@ -91,9 +99,8 @@ const Home = () => {
 
   const filteredCompanies = companies.filter((c) => {
     const query = search.trim().toLowerCase();
-
-    const companyName = c.displayName;
-    const matchesName = companyName.toLowerCase().includes(query);
+    const companyName = c.displayName.toLowerCase();
+    const matchesName = companyName.includes(query);
 
     const matchesService =
       Array.isArray(c.services) &&
@@ -114,11 +121,15 @@ const Home = () => {
         return;
       }
 
-      await API.post("/bookings", {
-        companyId: selectedCompany.id,
-        service,
-        slotId,
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      await API.post(
+        "/bookings",
+        {
+          companyId: selectedCompany.id,
+          service,
+          slotId,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       toast.success(t("home.booking_success"));
       setSelectedCompany(null);
@@ -151,7 +162,10 @@ const Home = () => {
             filteredCompanies.map((company) => (
               <CompanyCard
                 key={company.id}
-                company={company}
+                company={{
+                  ...company,
+                  images: mapCompanyImages(company.images),
+                }}
                 onBook={() => {
                   if (!user)
                     setSelectedCompany({ ...company, guestBooking: true });

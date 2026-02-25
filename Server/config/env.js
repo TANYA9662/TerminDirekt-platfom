@@ -5,35 +5,33 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// učitaj lokalni .env samo ako nije production
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: path.join(__dirname, '../.env') });
 }
 
+// Backend port
 export const PORT = process.env.PORT || 3001;
 
-// Database
-export const DB_URL = process.env.DATABASE_URL;
-export const DB_USER = process.env.DB_USER;
-export const DB_PASSWORD = process.env.DB_PASSWORD;
-export const DB_HOST = process.env.DB_HOST;
-export const DB_PORT = process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432;
-export const DB_NAME = process.env.DB_NAME;
+// Neon / PostgreSQL
+export const DB_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
 
 // JWT
 export const JWT_SECRET = process.env.JWT_SECRET;
 
-// Cloudinary
+// Cloudinary za slike
 export const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
 export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
 export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
 
-// SendGrid
+// Email konfiguracija
 export const EMAIL_USER = process.env.EMAIL_USER;
 export const EMAIL_PASS = process.env.EMAIL_PASS;
 export const EMAIL_HOST = process.env.EMAIL_HOST;
 export const EMAIL_PORT = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 587;
 export const EMAIL_SECURE = process.env.EMAIL_SECURE === 'true';
 
-// Frontend
+// Frontend URL-ovi
 export const FRONTEND_URLS = process.env.FRONTEND_URLS?.split(',') || ['http://localhost:3000'];
+
+// Base URL backend-a za lokalni razvoj ili produkciju (za statičke fajlove)
+export const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL || `http://localhost:${PORT}`;

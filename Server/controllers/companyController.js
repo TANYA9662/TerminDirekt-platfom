@@ -1,89 +1,99 @@
 import cloudinary from "../config/cloudinary.js";
 import { deleteImageById } from "../utils/deleteImageById.js";
-import { buildImageUrl } from "../utils/buildImageUrl.js";
 import { pool } from '../config/db.js';
-import fs from 'fs';
-import path from 'path';
 
 /* ================== IMAGES ================== */
 export const uploadCompanyImages = async (req, res) => {
   try {
     const companyId = Number(req.params.id);
-    if (isNaN(companyId)) return res.status(400).json({ message: 'Nevažeći ID firme' });
-    if (!req.files || req.files.length === 0) return res.status(400).json({ message: 'Nema fajlova za upload' });
+    if (!req.files || req.files.length === 0)
+      return res.status(400).json({ message: "Nema fajlova" });
 
-    const uploaded = [];
+    const savedImages = [];
 
     for (const file of req.files) {
       const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "companies" },
-          (error, result) => error ? reject(error) : resolve(result)
+          (err, r) => (err ? reject(err) : resolve(r))
         );
         stream.end(file.buffer);
       });
 
-      // Snimi u bazu samo ako želiš, ili direktno vrati Cloudinary URL
-      await pool.query(
-        'INSERT INTO company_images (company_id, image_path) VALUES ($1, $2)',
-        [companyId, result.secure_url]
+      const r = await pool.query(
+        `INSERT INTO company_images (company_id, image_path, public_id)
+         VALUES ($1,$2,$3)
+         RETURNING id, image_path, public_id`,
+        [companyId, result.secure_url, result.public_id]
       );
 
-      uploaded.push({
+      savedImages.push({
+        id: r.rows[0].id,
         url: result.secure_url,
         public_id: result.public_id
       });
     }
 
-    res.status(201).json({ images: uploaded });
-
+    res.status(201).json({ images: savedImages });
   } catch (err) {
-    console.error('uploadCompanyImages error:', err);
-    res.status(500).json({ message: 'Greška pri uploadu slika', error: err.message });
+    console.error("uploadCompanyImages error:", err);
+    res.status(500).json({ message: "Greška pri uploadu slika" });
   }
 };
 
 export const getCompanyImages = async (req, res) => {
   try {
     const companyId = Number(req.params.id);
-    if (isNaN(companyId)) return res.status(400).json({ message: 'Nevažeći ID firme' });
 
-    const r = await pool.query('SELECT * FROM company_images WHERE company_id=$1', [companyId]);
+    const r = await pool.query(
+      `SELECT id, image_path, public_id
+       FROM company_images
+       WHERE company_id=$1`,
+      [companyId]
+    );
 
-    const imagesWithUrl = r.rows.map(img => ({
-      ...img,
-      url: buildImageUrl(img)   // pun URL
+    const images = r.rows.map(img => ({
+      id: img.id,
+      url: img.image_path, // secure_url iz baze
+      public_id: img.public_id
     }));
 
-    res.json(imagesWithUrl);
+    res.json(images);
   } catch (err) {
     console.error("getCompanyImages error:", err);
-    res.status(500).json({ message: "Greška pri učitavanju slika", error: err.message });
+    res.status(500).json({ message: "Greška pri učitavanju slika" });
   }
 };
-
 
 export const deleteCompanyImage = async (req, res) => {
   try {
     const { imageId } = req.params;
 
     const r = await pool.query(
-      "SELECT c.user_id FROM company_images ci JOIN companies c ON ci.company_id = c.id WHERE ci.id = $1",
+      `SELECT public_id
+       FROM company_images
+       WHERE id=$1`,
       [imageId]
     );
-    if (!r.rows.length) return res.status(404).json({ message: "Slika ne postoji" });
 
-    const { user_id } = r.rows[0];
-    if (req.user.role !== "admin" && req.user.id !== user_id)
-      return res.status(403).json({ message: "Nemate pravo da obrišete ovu sliku" });
+    if (!r.rows.length)
+      return res.status(404).json({ message: "Slika ne postoji" });
 
-    // ovde koristiš funkciju iz utils
-    await deleteImageById(imageId);
+    const { public_id } = r.rows[0];
+
+    if (public_id) {
+      await cloudinary.uploader.destroy(public_id);
+    }
+
+    await pool.query(
+      `DELETE FROM company_images WHERE id=$1`,
+      [imageId]
+    );
 
     res.json({ success: true });
   } catch (err) {
     console.error("deleteCompanyImage error:", err);
-    res.status(500).json({ message: "Greška pri brisanju slike", error: err.message });
+    res.status(500).json({ message: "Greška pri brisanju slike" });
   }
 };
 
@@ -99,7 +109,12 @@ export const getAllCompanies = async (req, res) => {
         [company.id]
       );
 
-      const images = imagesRes.rows.map(img => ({ id: img.id, url: buildImageUrl(img) }));
+      const images = imagesRes.rows.map(img => ({
+        id: img.id,
+        url: img.image_path,
+        public_id: img.public_id
+      }));
+
       companies.push({ ...company, images });
     }
 
@@ -120,14 +135,11 @@ export const getAllCompaniesForUsers = async (req, res) => {
       if (typeof services === 'string') { try { services = JSON.parse(services); } catch { services = []; } }
 
       const imagesRes = await pool.query('SELECT * FROM company_images WHERE company_id=$1', [company.id]);
-      const images = imagesRes.rows.length
-        ? imagesRes.rows.map(img => ({
-          ...img,
-          url: img.public_id
-            ? cloudinary.url(img.public_id)
-            : `/uploads/companies/${img.image_path}`
-        }))
-        : [{ image_path: 'default.png', url: '/uploads/companies/default.png' }];
+      const images = imagesRes.rows.map(img => ({
+        id: img.id,
+        url: img.image_path,
+        public_id: img.public_id
+      }));
 
       const slotsRes = await pool.query(
         'SELECT * FROM slots WHERE company_id=$1 AND is_booked=false ORDER BY start_time ASC',
@@ -157,6 +169,7 @@ export const getAllCompaniesForUsers = async (req, res) => {
   }
 };
 
+
 export const getCompanyByUser = async (req, res) => {
   const userId = Number(req.params.userId || req.params.id);
   if (isNaN(userId)) return res.status(400).json({ message: 'Nevažeći user ID' });
@@ -185,31 +198,39 @@ export const getMyCompany = async (req, res) => {
     );
 
     let services = company.services;
-    if (typeof services === 'string') { try { services = JSON.parse(services); } catch { services = []; } }
+    if (typeof services === 'string') {
+      try { services = JSON.parse(services); }
+      catch { services = []; }
+    }
 
-    const slotsRes = await pool.query('SELECT * FROM slots WHERE company_id=$1 ORDER BY start_time ASC', [company.id]);
+    const slotsRes = await pool.query(
+      'SELECT * FROM slots WHERE company_id=$1 ORDER BY start_time ASC',
+      [company.id]
+    );
+
     const slots = slotsRes.rows.map(slot => ({
       ...slot,
       start_time: slot.start_time.toISOString(),
-      end_time: slot.end_time.toISOString()
+      end_time: slot.end_time?.toISOString() || null
     }));
 
     res.json({
       ...company,
       services,
       slots,
-      images: imagesRes.rows.length
-        ? imagesRes.rows.map(img => ({
-          ...img,
-          url: img.public_id
-            ? cloudinary.url(img.public_id)
-            : `/uploads/companies/${img.image_path}`
-        }))
-        : [{ id: null, url: '/uploads/companies/default.png' }]
+      images: imagesRes.rows.map(img => ({
+        id: img.id,
+        url: img.image_path,
+        public_id: img.public_id
+      }))
     });
+
   } catch (err) {
     console.error('getMyCompany error:', err);
-    res.status(500).json({ message: 'Greška pri dohvaćanju firme', error: err.message });
+    res.status(500).json({
+      message: 'Greška pri dohvaćanju firme',
+      error: err.message
+    });
   }
 };
 
@@ -230,15 +251,11 @@ export const getCompanyByIdWithDetails = async (req, res) => {
       'SELECT id, image_path, public_id FROM company_images WHERE company_id=$1',
       [companyId]
     );
-
-    const images = imagesRes.rows.length
-      ? imagesRes.rows.map(img => ({
-        id: img.id,
-        url: img.public_id
-          ? cloudinary.url(img.public_id)
-          : `/uploads/companies/${img.image_path}`
-      }))
-      : [{ id: null, url: '/uploads/companies/default.png' }];
+    const images = imagesRes.rows.map(img => ({
+      id: img.id,
+      url: img.image_path,
+      public_id: img.public_id
+    }));
 
     const slotsRes = await pool.query('SELECT * FROM slots WHERE company_id=$1 ORDER BY start_time ASC', [company.id]);
     const slots = slotsRes.rows.map(slot => ({
@@ -274,14 +291,11 @@ export const getCompaniesByCategoryWithDetails = async (req, res) => {
         'SELECT id, image_path, public_id FROM company_images WHERE company_id=$1',
         [company.id]
       );
-      const images = imagesRes.rows.length
-        ? imagesRes.rows.map(img => ({
-          id: img.id,
-          url: img.public_id
-            ? cloudinary.url(img.public_id)
-            : `/uploads/companies/${img.image_path}`
-        }))
-        : [{ id: null, url: '/uploads/companies/default.png' }];
+      const images = imagesRes.rows.map(img => ({
+        id: img.id,
+        url: img.image_path,
+        public_id: img.public_id
+      }));
 
       const slotsRes = await pool.query(
         'SELECT * FROM slots WHERE company_id=$1 ORDER BY start_time ASC',
@@ -330,14 +344,11 @@ export const getCompanyByUserWithDetails = async (req, res) => {
       end_time: slot.end_time?.toISOString() || null
     }));
 
-    const images = imagesRes.rows.length
-      ? imagesRes.rows.map(img => ({
-        id: img.id,
-        url: img.public_id
-          ? cloudinary.url(img.public_id)
-          : `/uploads/companies/${img.image_path}`
-      }))
-      : [{ id: null, url: '/uploads/companies/default.png' }];
+    const images = imagesRes.rows.map(img => ({
+      id: img.id,
+      url: img.image_path,
+      public_id: img.public_id
+    }));
 
     res.json({ ...company, services, images, slots });
   } catch (err) {
@@ -359,10 +370,9 @@ export const getAllCompaniesWithDetails = async (req, res) => {
 
       const imagesRes = await pool.query('SELECT * FROM company_images WHERE company_id=$1', [company.id]);
       const images = imagesRes.rows.map(img => ({
-        ...img,
-        url: img.public_id
-          ? cloudinary.url(img.public_id)
-          : `/uploads/companies/${img.image_path}`
+        id: img.id,
+        url: img.image_path,
+        public_id: img.public_id
       }));
 
       const slotsRes = await pool.query('SELECT * FROM slots WHERE company_id=$1 ORDER BY start_time ASC', [company.id]);
@@ -665,14 +675,11 @@ export const searchCompanies = async (req, res) => {
       }
 
       const imagesRes = await pool.query('SELECT * FROM company_images WHERE company_id=$1', [company.id]);
-      const images = imagesRes.rows.length
-        ? imagesRes.rows.map(img => ({
-          ...img,
-          url: img.public_id
-            ? `https://res.cloudinary.com/<tvoj-cloud-name>/image/upload/${img.public_id}`
-            : `/uploads/companies/${img.image_path}`
-        }))
-        : [{ image_path: 'default.png', url: '/uploads/companies/default.png' }];
+      const images = imagesRes.rows.map(img => ({
+        id: img.id,
+        url: img.image_path,
+        public_id: img.public_id
+      }));
 
       companies.push({
         ...company,

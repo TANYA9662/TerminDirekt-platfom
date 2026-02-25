@@ -6,7 +6,7 @@ import CompanyCardCategory from "../components/home/CompanyCardCategory";
 import BookingModal from "../components/modals/BookingModal";
 import { toast, ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
-import { DEFAULT_COMPANY_IMAGE } from "../utils/imageUtils";
+import { mapCompanyImages } from "../utils/imageUtils";
 
 /* ================= MULTI LANGUAGE HELPER ================= */
 const getTranslated = (field, lang) => {
@@ -17,13 +17,18 @@ const getTranslated = (field, lang) => {
 };
 
 /* ================= NORMALIZE COMPANY DATA ================= */
-const normalizeCompanies = (companiesRaw) =>
+const normalizeCompanies = (companiesRaw, lang) =>
   (companiesRaw || []).map((company) => {
     const services = Array.isArray(company.services)
       ? company.services
       : typeof company.services === "string"
         ? (() => { try { return JSON.parse(company.services); } catch { return []; } })()
         : [];
+
+    const mappedServices = services.map(s => ({
+      ...s,
+      name: getTranslated(s.name, lang)
+    }));
 
     const slots = Array.isArray(company.slots)
       ? company.slots.map((slot) => ({
@@ -35,22 +40,14 @@ const normalizeCompanies = (companiesRaw) =>
       }))
       : [];
 
-    const images =
-      Array.isArray(company.images) && company.images.length > 0
-        ? company.images.map((img) => ({ ...img, url: img.url || `/uploads/companies/${img.image_path}` }))
-        : [{ image_path: "default.png", url: DEFAULT_COMPANY_IMAGE }];
-
-    const reviews = Array.isArray(company.reviews) ? company.reviews : [];
-    const avg_rating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length : 0;
+    const images = mapCompanyImages(company.images);
 
     return {
       ...company,
-      services,
+      services: mappedServices,
       slots,
       images,
-      reviews,
-      avg_rating,
-      review_count: reviews.length,
+      displayName: getTranslated(company.name, lang),
     };
   });
 
@@ -89,7 +86,7 @@ const CategoryPage = () => {
         })
       );
 
-      const normalized = normalizeCompanies(detailedCompanies);
+      const normalized = normalizeCompanies(detailedCompanies, lang);
       setCompanies(normalized);
       setFilteredCompanies(normalized);
     } catch (err) {
@@ -111,11 +108,11 @@ const CategoryPage = () => {
     setFilteredCompanies(
       companies.filter(
         (c) =>
-          getTranslated(c.name, lang).toLowerCase().includes(q) ||
-          c.services?.some((s) => getTranslated(s.name, lang).toLowerCase().includes(q))
+          c.displayName.toLowerCase().includes(q) ||
+          c.services?.some((s) => s.name.toLowerCase().includes(q))
       )
     );
-  }, [search, companies, lang]);
+  }, [search, companies]);
 
   /* ================= BOOKING HANDLER ================= */
   const handleBooking = async ({ service, slotId }) => {
@@ -164,10 +161,14 @@ const CategoryPage = () => {
             filteredCompanies.map((company) => (
               <CompanyCardCategory
                 key={company.id}
-                company={company}
+                company={{
+                  ...company,
+                  images: company.images, // sada koristi mapCompanyImages
+                  displayName: company.displayName,
+                }}
                 onBook={() => {
                   if (!user) navigate("/login");
-                  else if (user.role !== "user") alert("Samo korisnici mogu rezervisati");
+                  else if (user.role !== "user") alert(t("home.only_users_booking", "Samo korisnici mogu rezervisati"));
                   else {
                     setSelectedCompany(company);
                     setBookingOpen(true);

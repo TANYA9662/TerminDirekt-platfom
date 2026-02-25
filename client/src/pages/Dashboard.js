@@ -4,10 +4,10 @@ import BookingModal from "../components/modals/BookingModal";
 import CompanyCard from "../components/home/CompanyCard";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { absoluteUrl } from "../utils/imageUtils";
 import API from "../api";
 import { useTranslation } from "react-i18next";
 
+// ================= HELPER =================
 const getTranslated = (field, lang) => {
   if (!field) return "";
   if (typeof field === "string") return field;
@@ -15,6 +15,14 @@ const getTranslated = (field, lang) => {
   return "";
 };
 
+// ================= ABSOLUTE URL HELPER =================
+const absoluteUrl = (path) => {
+  if (!path) return "http://localhost:3001/uploads/avatars/default.png";
+  if (path.startsWith("http")) return path;
+  return `http://localhost:3001${path.startsWith("/") ? "" : "/"}${path}`;
+};
+
+// ================= DASHBOARD =================
 const Dashboard = () => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
@@ -24,7 +32,6 @@ const Dashboard = () => {
   const [companies, setCompanies] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
-
   const [editOpen, setEditOpen] = useState(false);
   const [profileData, setProfileData] = useState({
     name: "",
@@ -78,17 +85,16 @@ const Dashboard = () => {
     }
   }, [t]);
 
+  // ==== FETCH COMPANIES ====
   const fetchCompanies = useCallback(async () => {
     try {
       const res = await API.get("/companies/user-view");
-
-      const data = (res.data || []).map(c => ({
+      const data = (res.data || []).map((c) => ({
         ...c,
-        images: Array.isArray(c.images) && c.images.length > 0 ? c.images : [],
+        images: Array.isArray(c.images) ? c.images : [],
         services: c.services || [],
         slots: c.slots || [],
       }));
-
       setCompanies(data);
     } catch {
       toast.error(t("dashboard.error_fetch_companies"));
@@ -101,7 +107,6 @@ const Dashboard = () => {
       fetchCompanies();
     }
   }, [loading, isCompany, fetchBookings, fetchCompanies]);
-
 
   // ==== SAVE PROFILE ====
   const saveProfile = async () => {
@@ -159,7 +164,7 @@ const Dashboard = () => {
           <div className="flex gap-4 items-center">
             <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
               <img
-                src={absoluteUrl(user?.avatar) || absoluteUrl("/uploads/avatars/default.png")}
+                src={absoluteUrl(user?.avatar)}
                 alt={t("dashboard.avatar_alt")}
                 className="w-full h-full object-cover"
               />
@@ -216,7 +221,7 @@ const Dashboard = () => {
               key={c.id}
               company={{
                 ...c,
-                images: c.images.map(img => ({ ...img, url: absoluteUrl(img.url) })),
+                images: c.images.map((img) => ({ ...img, url: absoluteUrl(img.url) })),
               }}
               onBook={(co) => {
                 setSelectedCompany(co);

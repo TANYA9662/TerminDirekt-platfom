@@ -40,6 +40,14 @@ const resources = {
         category_not_found: "Category not found",
         search_placeholder: "Search companies or services..."
       },
+      booking: {
+        services_and_prices: "Services and Prices",
+        minutes: "min",
+        available_slots: "Available Slots",
+        no_available_slots: "No available slots",
+        cancel: "Cancel",
+        book_now: "Book Now"
+      },
       auth: {
         register: "Register",
         login: "Login",
@@ -108,8 +116,12 @@ const resources = {
         loading: "Loading..."
       },
       companyPage: {
+        welcome_message: "Welcome to the best Studio for Beauty!",
         book_slot: "Book appointment",
         services_title: "Services and Prices",
+        available_slots: "Available Slots",
+        book: "Book",
+        cancel: "Cancel",
         reviews: "Reviews",
         rating_label: "Rating",
         rating_input: "Rating (1–5)",
@@ -196,6 +208,16 @@ const resources = {
         category_not_found: "Kategorija nije pronađena",
         search_placeholder: "Pretraži firme ili usluge..."
       },
+      booking: {
+        services_and_prices: "Usluge i cene",
+        minutes: "min",
+        available_slots: "Slobodni termini",
+        no_available_slots: "Nema slobodnih termina",
+        cancel: "Otkaži",
+        book_now: "Rezerviši"
+      },
+
+
       auth: {
         register: "Registracija",
         login: "Prijava",
@@ -265,6 +287,7 @@ const resources = {
         loading: "Učitavanje..."
       },
       companyPage: {
+        welcome_message: "Dobrodošli u najbolji studio za lepotu!",
         book_slot: "Rezerviši termin",
         services_title: "Usluge i cene",
         reviews: "Recenzije",
@@ -275,6 +298,9 @@ const resources = {
         submit_review: "Pošalji recenziju",
         no_reviews: "Nema recenzija",
         user_default: "Korisnik",
+        available_slots: "Slobodni termini",
+        book: "Rezerviši",
+        cancel: "Otkaži",
         booking_success: "Termin uspešno zakazan!",
         booking_error: "Greška pri rezervaciji termina",
         login_required_review: "Morate biti ulogovani da ostavite recenziju",
@@ -353,6 +379,14 @@ const resources = {
         category_not_found: "Kategorin hittades inte",
         search_placeholder: "Sök företag eller tjänster..."
       },
+      booking: {
+        services_and_prices: "Tjänster och priser",
+        minutes: "min",
+        available_slots: "Tillgängliga tider",
+        no_available_slots: "Inga tillgängliga tider",
+        cancel: "Avbryt",
+        book_now: "Boka"
+      },
       auth: {
         register: "Registrera",
         login: "Logga in",
@@ -419,8 +453,12 @@ const resources = {
         loading: "Läser..."
       },
       companyPage: {
+        welcome_message: "Välkommen till den bästa studion för skönhet!",
         book_slot: "Boka tid",
         services_title: "Tjänster och priser",
+        available_slots: "Tillgängliga tider",
+        book: "Boka",
+        cancel: "Avbryt",
         reviews: "Recensioner",
         rating_label: "Betyg",
         rating_input: "Betyg (1–5)",
