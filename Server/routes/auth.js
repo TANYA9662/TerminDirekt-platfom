@@ -1,14 +1,12 @@
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import express from "express";
-import dotenv from "dotenv";
-import bcrypt from 'bcryptjs'; // bcryptjs radi na serverless
+import bcrypt from 'bcryptjs';
 import { pool } from '../config/db.js';
 import { registerUser, loginUser, updateUser } from "../controllers/authController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
 import uploadAvatar from "../middlewares/uploadAvatar.js";
 
-dotenv.config();
 const router = express.Router();
 
 // ================= REGISTER / LOGIN =================
@@ -22,8 +20,7 @@ router.put("/me", authenticateToken, updateUser);
 router.get("/me", authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, email, phone, role, avatar 
-       FROM users WHERE id = $1`,
+      `SELECT id, name, email, phone, role, avatar FROM users WHERE id = $1`,
       [req.user.id]
     );
     res.json(result.rows[0]);
@@ -41,12 +38,13 @@ router.put(
   async (req, res) => {
     if (!req.file) return res.status(400).json({ message: "Slika nije poslata" });
 
+    // Cloudinary URL
     await pool.query(
       "UPDATE users SET avatar=$1 WHERE id=$2",
-      [req.file.filename, req.user.id]
+      [req.file.path, req.user.id]
     );
 
-    res.json({ avatar: req.file.filename });
+    res.json({ avatar: req.file.path });
   }
 );
 
@@ -66,11 +64,7 @@ router.post("/reset-password-request", async (req, res) => {
   const { email } = req.body;
 
   try {
-    const userResult = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [email]
-    );
-
+    const userResult = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
     if (!userResult.rows.length) return res.json({ message: "Ako email postoji, link je poslat." });
 
     const token = crypto.randomBytes(32).toString("hex");
@@ -81,7 +75,6 @@ router.post("/reset-password-request", async (req, res) => {
       [token, expires, email]
     );
 
-    // Koristi BACKEND_BASE_URL iz env
     const resetLink = `${process.env.BACKEND_BASE_URL}/reset-password?token=${token}`;
 
     await transporter.sendMail({
@@ -107,12 +100,10 @@ router.post("/reset-password", async (req, res) => {
       "SELECT id, reset_token_expires FROM users WHERE reset_token=$1",
       [token]
     );
-
     if (!r.rows.length) return res.status(400).json({ message: "Neispravan token." });
     if (new Date(r.rows[0].reset_token_expires) < new Date()) return res.status(400).json({ message: "Token je istekao." });
 
     const hash = await bcrypt.hash(newPassword, 10);
-
     await pool.query(
       "UPDATE users SET password=$1, reset_token=NULL, reset_token_expires=NULL WHERE id=$2",
       [hash, r.rows[0].id]

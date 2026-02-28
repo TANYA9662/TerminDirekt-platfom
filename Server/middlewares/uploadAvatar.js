@@ -1,25 +1,16 @@
 import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "../config/cloudinary.js";
 
-const uploadDir = path.join(process.cwd(), "public/uploads/avatars");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `avatar_${req.user.id}_${Date.now()}${ext}`);
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "avatars",
+    format: async () => "png",
+    public_id: (req, file) => Date.now().toString(),
   },
 });
 
-const uploadAvatar = multer({
-  storage,
-  limits: { fileSize: 2 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) return cb(new Error("Dozvoljene su samo slike"));
-    cb(null, true);
-  },
-});
+const uploadAvatar = multer({ storage });
 
 export default uploadAvatar;

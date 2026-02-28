@@ -5,19 +5,16 @@ dotenv.config();
 
 // JWT auth
 export const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token' });
-  }
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-  const token = authHeader.split(' ')[1];
-  try {
-    const decodedUser = jwt.verify(token, process.env.JWT_SECRET || 'tajni_kljuc');
-    req.user = decodedUser;
+  if (!token) return res.status(401).json({ message: "Nije autentifikovan" });
+
+  jwt.verify(token, process.env.JWT_SECRET || 'tajni_kljuc', (err, user) => {
+    if (err) return res.status(403).json({ message: "Nevalidan token" });
+    req.user = user;
     next();
-  } catch {
-    return res.status(401).json({ message: 'Invalid token' });
-  }
+  });
 };
 
 // Role check

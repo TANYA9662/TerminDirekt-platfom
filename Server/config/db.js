@@ -1,14 +1,22 @@
 import pkg from 'pg';
+import { DB_URL } from './env.js';
 const { Pool } = pkg;
 
-const pool = global._pgPool || new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
+let pool;
 
 if (!global._pgPool) {
+  pool = new Pool({
+    connectionString: DB_URL,
+    ssl: { rejectUnauthorized: false },
+  });
+
+  pool.on('error', (err) => {
+    console.error('❌ Neočekivana DB greška:', err);
+  });
+
   global._pgPool = pool;
-  pool.on('error', (err) => console.error('DB ERROR', err));
+} else {
+  pool = global._pgPool;
 }
 
 export { pool };
