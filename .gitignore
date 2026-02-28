@@ -30,3 +30,5 @@ Server/public/uploads/
 
 termin_full.sql
 termin_local_data.sql
+
+client/.env*
