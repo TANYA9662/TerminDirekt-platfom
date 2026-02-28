@@ -16,8 +16,9 @@ const allowedOrigins = Array.isArray(FRONTEND_URLS) ? FRONTEND_URLS : [];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin?.includes('.vercel.app')) return callback(null, true);
+    if (!origin) return callback(null, true); // Postman / curl
+    // Dozvoli frontend URL iz env ili bilo koji Vercel poddomen
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) return callback(null, true);
     callback(new Error('CORS nije dozvoljen za origin: ' + origin));
   },
   credentials: true,

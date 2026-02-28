@@ -3,16 +3,18 @@ import * as categoryController from '../controllers/categoryController.js';
 
 const router = express.Router();
 
-// List all categories
+// ================== PUBLIC ROUTES ==================
+
+// Lista svih kategorija
 router.get('/', categoryController.getAllCategories);
 
-// One category by ID
+// Jedna kategorija po ID-u
 router.get('/:id', categoryController.getCategoryById);
+
 
 // All companies in category
 router.get('/:id/companies', categoryController.getCompaniesByCategory);
-router.get("/:id/companies/details", categoryController.getCompaniesByCategoryWithDetails);
-
+router.get('/:id/companies/details', categoryController.getCompaniesByCategoryWithDetails);
 
 // CRUD
 router.post('/', categoryController.createCategory);
