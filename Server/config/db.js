@@ -1,15 +1,20 @@
 import pkg from 'pg';
 const { Pool } = pkg;
+import { DB_URL } from './env.js';
 
 const pool = new Pool({
-  connectionString: 'postgresql://neondb_owner:npg_2ABagh9YpHzb@ep-solitary-shadow-aic5l5b9-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
-  ssl: { rejectUnauthorized: false },
+  connectionString: DB_URL, // koristi env var
+  ssl: { rejectUnauthorized: false }, // potrebno za Neon
 });
 
-pool.connect()
-  .then(() => console.log('✅ Connected to Neon'))
-  .catch(console.error);
+// Samo lokalno test konekcije
+if (process.env.NODE_ENV !== 'production') {
+  pool.connect()
+    .then(() => console.log('✅ Connected to Neon'))
+    .catch(console.error);
+}
 
+// Global error handler za pool
 pool.on('error', (err) => {
   console.error('❌ Neočekivana DB greška:', err);
 });

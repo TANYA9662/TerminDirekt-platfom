@@ -34,10 +34,8 @@ app.use(
   express.static(path.join(__dirname, 'public/uploads'))
 );
 
-// ================== CORS za API ==================
-const allowedOrigins = Array.isArray(FRONTEND_URLS)
-  ? FRONTEND_URLS
-  : FRONTEND_URLS.split(',');
+// ================== CORS ==================
+const allowedOrigins = Array.isArray(FRONTEND_URLS) ? FRONTEND_URLS : [];
 
 app.use(
   cors({
