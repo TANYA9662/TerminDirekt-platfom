@@ -73,10 +73,8 @@ app.use(errorHandler);
 app.get('/', (req, res) => res.send('TerminDirekt API radi! 🚀'));
 
 // ================== Start servera ==================
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () =>
-    console.log(`🚀 Server radi na http://localhost:${PORT}`)
-  );
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => console.log(`🚀 Server radi na http://localhost:${PORT}`));
 }
 
 export default app;

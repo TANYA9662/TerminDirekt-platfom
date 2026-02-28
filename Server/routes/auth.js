@@ -2,7 +2,7 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 import express from "express";
 import dotenv from "dotenv";
-import bcrypt from "bcrypt";
+import bcrypt from 'bcryptjs';
 import { pool } from '../config/db.js';
 
 import { registerUser, loginUser, updateUser } from "../controllers/authController.js";
