@@ -7,7 +7,8 @@ import categoriesRoutes from './categories.js';
 import providersRoutes from './providers.js';
 import searchRoutes from './search.js';
 import servicesRoutes from './services.js';
-import reviewRoutes from './reviews.js'; // ✅ samo jednom
+import reviewRoutes from './reviews.js';
+
 
 const router = express.Router();
 
