@@ -2,9 +2,8 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 import express from "express";
 import dotenv from "dotenv";
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs'; // bcryptjs radi na serverless
 import { pool } from '../config/db.js';
-
 import { registerUser, loginUser, updateUser } from "../controllers/authController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
 import uploadAvatar from "../middlewares/uploadAvatar.js";
@@ -19,7 +18,7 @@ router.post("/login", loginUser);
 // ================= UPDATE PROFILE =================
 router.put("/me", authenticateToken, updateUser);
 
-// ================= CURRENT USER (BITNO!) =================
+// ================= CURRENT USER =================
 router.get("/me", authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
@@ -27,9 +26,9 @@ router.get("/me", authenticateToken, async (req, res) => {
        FROM users WHERE id = $1`,
       [req.user.id]
     );
-
     res.json(result.rows[0]);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Greška pri učitavanju korisnika" });
   }
 });
@@ -40,9 +39,7 @@ router.put(
   authenticateToken,
   uploadAvatar.single("avatar"),
   async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ message: "Slika nije poslata" });
-    }
+    if (!req.file) return res.status(400).json({ message: "Slika nije poslata" });
 
     await pool.query(
       "UPDATE users SET avatar=$1 WHERE id=$2",
@@ -74,9 +71,7 @@ router.post("/reset-password-request", async (req, res) => {
       [email]
     );
 
-    if (!userResult.rows.length) {
-      return res.json({ message: "Ako email postoji, link je poslat." });
-    }
+    if (!userResult.rows.length) return res.json({ message: "Ako email postoji, link je poslat." });
 
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 60 * 60 * 1000);
@@ -86,17 +81,19 @@ router.post("/reset-password-request", async (req, res) => {
       [token, expires, email]
     );
 
-    const resetLink = `http://localhost:3000/reset-password?token=${token}`;
+    // Koristi BACKEND_BASE_URL iz env
+    const resetLink = `${process.env.BACKEND_BASE_URL}/reset-password?token=${token}`;
 
     await transporter.sendMail({
-      from: `"TerminDirekt" <tanjapreo@gmail.com>`,
+      from: `"TerminDirekt" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Reset lozinke",
       html: `<a href="${resetLink}">${resetLink}</a>`,
     });
 
     res.json({ message: "Link za reset je poslat." });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Greška na serveru." });
   }
 });
@@ -111,13 +108,8 @@ router.post("/reset-password", async (req, res) => {
       [token]
     );
 
-    if (!r.rows.length) {
-      return res.status(400).json({ message: "Neispravan token." });
-    }
-
-    if (new Date(r.rows[0].reset_token_expires) < new Date()) {
-      return res.status(400).json({ message: "Token je istekao." });
-    }
+    if (!r.rows.length) return res.status(400).json({ message: "Neispravan token." });
+    if (new Date(r.rows[0].reset_token_expires) < new Date()) return res.status(400).json({ message: "Token je istekao." });
 
     const hash = await bcrypt.hash(newPassword, 10);
 
@@ -127,7 +119,8 @@ router.post("/reset-password", async (req, res) => {
     );
 
     res.json({ message: "Lozinka je promenjena." });
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Greška na serveru." });
   }
 });
