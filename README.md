@@ -1,14 +1,20 @@
                                  # Termin Direkt Platform (In Progress)
                                   
 
-A lightweight web application for booking appointments in service-based businesses like hair and beauty salons. Users can browse companies by category, select services and available time slots, and book them online.  
+A modern web application for booking appointments in service-based businesses (hair, beauty, wellness). Users can browse companies by category, choose services, and book available time slots online.  
 
-Companies can manage their services, images, and schedules via a dedicated dashboard. The app uses a React + Tailwind frontend and a Node.js + Express + PostgreSQL backend with JWT authentication.  
+Businesses manage their services, images, and schedules via a dedicated dashboard.  
+
+**Tech stack:** React + Tailwind CSS (frontend), Node.js + Express + PostgreSQL (backend), JWT authentication, Cloudinary for image storage, deployed on Vercel.  
+
+**Live Demo:** [termin-direkt-platfom.vercel.app](https://termin-direkt-platfom.vercel.app)
 
 
 # Getting Started
 
-Clone the repository and install dependencies:
+1. Clone the repository:  
+```bash
+git clone https://github.com/TANYA9662/TerminDirekt-platfom.git
 
 ```bash
 npm install
