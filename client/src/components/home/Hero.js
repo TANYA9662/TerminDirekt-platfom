@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
   const { t } = useTranslation();
-  const heroBackground = absoluteUrl("/uploads/companies/pozadina.jpg");
+  const heroBackground = "http://res.cloudinary.com/dtlzrpjgn/image/upload/v1772352587/companies/zwuj7dabyrjpeztevama.avif";
 
   return (
     <section className="relative w-full flex flex-col items-center justify-center bg-gray-100 pt-[18px] pb-10">
