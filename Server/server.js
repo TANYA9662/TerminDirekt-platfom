@@ -12,14 +12,22 @@ import { langMiddleware } from "./middlewares/langMiddleware.js";
 const app = express();
 
 // ================== CORS ==================
-const allowedOrigins = Array.isArray(FRONTEND_URLS) ? FRONTEND_URLS : [];
+const allowedOrigins = (process.env.FRONTEND_URLS || "")
+  .split(",")
+  .map(o => o.trim());
 
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // Postman / curl
-    // Dozvoli frontend URL iz env ili bilo koji Vercel poddomen
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) return callback(null, true);
-    callback(new Error('CORS nije dozvoljen za origin: ' + origin));
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith(".vercel.app")
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("CORS blocked: " + origin));
   },
   credentials: true,
 }));

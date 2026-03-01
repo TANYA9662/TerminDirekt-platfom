@@ -4,7 +4,7 @@ import i18n from "./i18n";
 // Base URL bira prema env
 const baseURL =
   process.env.NODE_ENV === "production"
-    ? "https://termin-direkt-backend.vercel.app/api"
+    ? process.env.REACT_APP_API_URL
     : "http://localhost:3001/api";
 
 const API = axios.create({
