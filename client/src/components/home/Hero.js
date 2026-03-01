@@ -1,5 +1,4 @@
 import React from "react";
-import { absoluteUrl } from "../../utils/imageUtils";
 import { useTranslation } from "react-i18next";
 
 const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
