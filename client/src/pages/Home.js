@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import API from "../api";
 import Hero from "../components/home/Hero";
+import Footer from "../components/common/Footer";
 import CompanyCard from "../components/home/CompanyCard";
 import BookingModal from "../components/modals/BookingModal";
 import { AuthContext } from "../context/AuthContext";
@@ -156,8 +157,8 @@ const Home = () => {
         cities={cities}
       />
 
-      <div className="max-w-7xl mx-auto px-4 -mt-4 relative z-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+      <div className="max-w-8xl mx-auto px-4 -mt-4 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredCompanies.length > 0 ? (
             filteredCompanies.map((company) => (
               <CompanyCard
@@ -222,6 +223,7 @@ const Home = () => {
         pauseOnHover
       />
     </div>
+
   );
 };
 

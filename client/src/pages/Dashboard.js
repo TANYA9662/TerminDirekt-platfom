@@ -1,21 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import useAuth from "../hooks/useAuth";
-import BookingModal from "../components/modals/BookingModal";
-import CompanyCard from "../components/home/CompanyCard";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import API from "../api";
 import { useTranslation } from "react-i18next";
 
-// ================= HELPER =================
-const getTranslated = (field, lang) => {
-  if (!field) return "";
-  if (typeof field === "string") return field;
-  if (typeof field === "object") return field[lang] || field.sr || field.en || field.sv || "";
-  return "";
-};
-
-// ================= ABSOLUTE URL HELPER =================
+// ================= HELPERS =================
 const absoluteUrl = (path) => {
   if (!path) return "http://localhost:3001/uploads/avatars/default.png";
   if (path.startsWith("http")) return path;
@@ -29,9 +19,6 @@ const Dashboard = () => {
 
   const { user, setUser, loading, isCompany } = useAuth();
   const [bookings, setBookings] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [profileData, setProfileData] = useState({
     name: "",
@@ -51,6 +38,35 @@ const Dashboard = () => {
       });
     }
   }, [user]);
+
+  // ==== FETCH BOOKINGS ====
+  const fetchBookings = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const res = await API.get("/bookings/me", config);
+      setBookings(res.data || []);
+    } catch (err) {
+      console.error(err);
+      toast.error(t("dashboard.error_fetch_bookings"));
+    }
+  }, [t]);
+
+  useEffect(() => {
+    if (!loading && !isCompany) fetchBookings();
+  }, [loading, isCompany, fetchBookings]);
+
+  // ==== SAVE PROFILE ====
+  const saveProfile = async () => {
+    try {
+      const res = await API.put("/auth/me", profileData);
+      setUser((prev) => ({ ...prev, ...res.data }));
+      toast.success(t("dashboard.profile_updated"));
+      setEditOpen(false);
+    } catch {
+      toast.error(t("dashboard.error_profile_update"));
+    }
+  };
 
   // ==== UPLOAD AVATAR ====
   const handleAvatarUpload = async (e) => {
@@ -72,73 +88,7 @@ const Dashboard = () => {
     }
   };
 
-  // ==== FETCH BOOKINGS ====
-  const fetchBookings = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const res = await API.get("/bookings/me", config);
-      setBookings(res.data || []);
-    } catch (err) {
-      console.error(err);
-      toast.error(t("dashboard.error_fetch_bookings"));
-    }
-  }, [t]);
-
-  // ==== FETCH COMPANIES ====
-  const fetchCompanies = useCallback(async () => {
-    try {
-      const res = await API.get("/companies/user-view");
-      const data = (res.data || []).map((c) => ({
-        ...c,
-        images: Array.isArray(c.images) ? c.images : [],
-        services: c.services || [],
-        slots: c.slots || [],
-      }));
-      setCompanies(data);
-    } catch {
-      toast.error(t("dashboard.error_fetch_companies"));
-    }
-  }, [t]);
-
-  useEffect(() => {
-    if (!loading && !isCompany) {
-      fetchBookings();
-      fetchCompanies();
-    }
-  }, [loading, isCompany, fetchBookings, fetchCompanies]);
-
-  // ==== SAVE PROFILE ====
-  const saveProfile = async () => {
-    try {
-      const res = await API.put("/auth/me", profileData);
-      setUser((prev) => ({ ...prev, ...res.data }));
-      toast.success(t("dashboard.profile_updated"));
-      setEditOpen(false);
-    } catch {
-      toast.error(t("dashboard.error_profile_update"));
-    }
-  };
-
-  // ==== BOOKING HANDLERS ====
-  const handleBooking = async ({ service, slotId }) => {
-    if (!selectedCompany) return;
-    try {
-      const token = localStorage.getItem("token");
-      await API.post(
-        "/bookings",
-        { companyId: selectedCompany.id, service, slotId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success(t("dashboard.booking_success"));
-      setModalOpen(false);
-      fetchBookings();
-    } catch (err) {
-      console.error(err);
-      toast.error(t("dashboard.error_booking"));
-    }
-  };
-
+  // ==== CANCEL BOOKING ====
   const handleCancelBooking = async (id) => {
     if (!window.confirm(t("dashboard.confirm_cancel_booking"))) return;
     try {
@@ -156,21 +106,23 @@ const Dashboard = () => {
   if (loading) return <div className="p-6 text-center">{t("dashboard.loading")}</div>;
   if (isCompany) return <div className="p-6 text-center">{t("dashboard.access_denied")}</div>;
 
+  // ==== GET NEXT BOOKING ====
+  const nextBooking = bookings
+    .filter((b) => new Date(b.start_time) > new Date())
+    .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))[0];
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
-        {/* PROFILE */}
-        <div className="bg-white p-6 rounded-3xl shadow flex justify-between items-center">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-12 space-y-10">
+
+        {/* ===== PROFILE ===== */}
+        <div className="bg-white p-6 rounded-3xl shadow flex flex-col md:flex-row items-center gap-6">
           <div className="flex gap-4 items-center">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
-              <img
-                src={absoluteUrl(user?.avatar)}
-                alt={t("dashboard.avatar_alt")}
-                className="w-full h-full object-cover"
-              />
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
+              <img src={absoluteUrl(user?.avatar)} alt="Avatar" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">{user?.name || t("dashboard.user")}</h2>
+              <h2 className="text-2xl font-bold">{user?.name}</h2>
               <p className="text-gray-600">{user?.email}</p>
               {user?.phone && <p className="text-gray-600">{user.phone}</p>}
               {user?.city && <p className="text-gray-600">{user.city}</p>}
@@ -178,33 +130,70 @@ const Dashboard = () => {
           </div>
           <button
             onClick={() => setEditOpen(true)}
-            className="bg-gray-600 text-white px-4 py-2 rounded-xl"
+            className="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700"
           >
             {t("dashboard.edit_profile")}
           </button>
         </div>
 
-        {/* BOOKINGS */}
-        <div className="space-y-4">
+        {/* ===== STATISTICS ===== */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-2xl shadow p-4 text-center">
+            <p className="text-sm text-gray-500">{t("dashboard.total_bookings")}</p>
+            <p className="text-xl font-bold">{bookings.length}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow p-4 text-center">
+            <p className="text-sm text-gray-500">{t("dashboard.completed")}</p>
+            <p className="text-xl font-bold">{bookings.filter(b => b.status === 'completed').length}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow p-4 text-center">
+            <p className="text-sm text-gray-500">{t("dashboard.cancelled")}</p>
+            <p className="text-xl font-bold">{bookings.filter(b => b.status === 'cancelled').length}</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow p-4 text-center">
+            <p className="text-sm text-gray-500">{t("dashboard.next_appointment")}</p>
+            <p className="text-xl font-bold">
+              {nextBooking ? new Date(nextBooking.start_time).toLocaleDateString() : "-"}
+            </p>
+          </div>
+        </div>
+
+        {/* ===== QUICK LINKS ===== */}
+        <div className="bg-white p-6 rounded-3xl shadow grid grid-cols-2 md:grid-cols-4 gap-6">
+          <a href="/support" className="flex flex-col items-center p-4 hover:bg-gray-100 rounded-xl">
+            <span className="text-2xl">💬</span>
+            <p className="text-sm mt-2">{t("dashboard.quick_support")}</p>
+          </a>
+          <a href="/dashboard/settings" className="flex flex-col items-center p-4 hover:bg-gray-100 rounded-xl">
+            <span className="text-2xl">⚙️</span>
+            <p className="text-sm mt-2">{t("dashboard.quick_settings")}</p>
+          </a>
+          <a href="/dashboard/notifications" className="flex flex-col items-center p-4 hover:bg-gray-100 rounded-xl">
+            <span className="text-2xl">🔔</span>
+            <p className="text-sm mt-2">{t("dashboard.quick_notifications")}</p>
+          </a>
+          <a href="/dashboard/help" className="flex flex-col items-center p-4 hover:bg-gray-100 rounded-xl">
+            <span className="text-2xl">❓</span>
+            <p className="text-sm mt-2">{t("dashboard.quick_help")}</p>
+          </a>
+        </div>
+
+        {/* ===== BOOKINGS ===== */}
+        <div className="bg-white p-6 rounded-3xl shadow space-y-4">
           <h2 className="text-xl font-semibold">{t("dashboard.my_bookings")}</h2>
           {bookings.length === 0 ? (
             <p className="text-gray-500">{t("dashboard.no_bookings")}</p>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               {bookings.map((b) => (
-                <div
-                  key={b.id}
-                  className="bg-white p-4 rounded-2xl ring-1 ring-gray-300 shadow-md flex flex-col justify-between"
-                >
+                <div key={b.id} className="bg-gray-50 p-4 rounded-2xl shadow-sm flex justify-between items-center">
                   <div>
-                    <p className="font-medium text-gray-700">{getTranslated(b.company_name, lang)}</p>
-                    <p className="text-gray-600 text-sm">
-                      {b.service} – {new Date(b.start_time).toLocaleString("sr-RS")}
-                    </p>
+                    <p className="font-medium">{b.company_name}</p>
+                    <p className="text-gray-600 text-sm">{b.service} – {new Date(b.start_time).toLocaleString()}</p>
                   </div>
                   <button
                     onClick={() => handleCancelBooking(b.id)}
-                    className="mt-2 bg-red-600 text-white px-3 py-1 rounded-xl hover:bg-red-700"
+                    className="bg-red-600 text-white px-3 py-1 rounded-xl hover:bg-red-700"
                   >
                     {t("dashboard.cancel")}
                   </button>
@@ -214,25 +203,9 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* COMPANIES */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {companies.map((c) => (
-            <CompanyCard
-              key={c.id}
-              company={{
-                ...c,
-                images: c.images.map((img) => ({ ...img, url: absoluteUrl(img.url) })),
-              }}
-              onBook={(co) => {
-                setSelectedCompany(co);
-                setModalOpen(true);
-              }}
-            />
-          ))}
-        </div>
       </div>
 
-      {/* PROFILE MODAL */}
+      {/* ===== PROFILE MODAL ===== */}
       {editOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-3xl w-full max-w-md space-y-3">
@@ -274,14 +247,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* BOOKING MODAL */}
-      {modalOpen && (
-        <BookingModal
-          company={selectedCompany}
-          onClose={() => setModalOpen(false)}
-          onSubmit={handleBooking}
-        />
-      )}
       <ToastContainer />
     </div>
   );

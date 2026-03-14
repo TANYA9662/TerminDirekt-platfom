@@ -3,6 +3,11 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 import { CompanyContext } from "./context/CompanyContext";
 
+import { SupportPage } from "./pages/SupportPage";
+import { AboutPage } from "./pages/AboutPage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
+import { TermsPage } from "./pages/TermsPage";
+
 import Home from "./pages/Home";
 import CategoryPage from "./pages/CategoryPage";
 import CompanyPage from "./pages/CompanyPage";
@@ -32,13 +37,21 @@ export default function AppRoutes() {
     );
   }
 
-  // Funkcija koja određuje sledeći onboarding step
   const getNextOnboardingStep = (company) => {
     if (!company?.name?.trim() || !company?.description?.trim()) return "company";
     if (!Array.isArray(company.images) || company.images.length === 0) return "images";
     if (!Array.isArray(company.services) || company.services.length === 0) return "services";
     return null;
   };
+
+  const footerRoutes = (
+    <>
+      <Route path="/support" element={<SupportPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+    </>
+  );
 
   // 🚫 Guest
   if (!user) {
@@ -51,6 +64,9 @@ export default function AppRoutes() {
         <Route path="/companies/:id" element={<CompanyPage />} />
         <Route path="/reset-password-request" element={<ResetPasswordRequest />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+
+        {footerRoutes}
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -63,7 +79,6 @@ export default function AppRoutes() {
 
     return (
       <Routes>
-        {/* Onboarding ako firma nije kompletna */}
         {!finalCompanyComplete && (
           <Route path="/onboarding/*" element={<OnboardingGuard />}>
             <Route element={<OnboardingLayout />}>
@@ -74,16 +89,16 @@ export default function AppRoutes() {
           </Route>
         )}
 
-        {/* Firma kompletna */}
         {finalCompanyComplete && (
           <>
             <Route path="/company-dashboard" element={<CompanyDashboard />} />
             <Route path="/category/:id" element={<CategoryPage />} />
             <Route path="/companies/:id" element={<CompanyPage />} />
+
+            {footerRoutes}
           </>
         )}
 
-        {/* Redirect */}
         <Route
           path="*"
           element={
@@ -104,6 +119,9 @@ export default function AppRoutes() {
       <Route path="/category/:id" element={<CategoryPage />} />
       <Route path="/companies/:id" element={<CompanyPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
+
+      {footerRoutes}
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

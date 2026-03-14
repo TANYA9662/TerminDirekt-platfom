@@ -66,7 +66,7 @@ const CompanyDashboard = () => {
     loadCategories();
   }, [t]);
 
-  // ---- IntersectionObserver za animacije kolona ----
+  // ---- IntersectionObserver  ----
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {

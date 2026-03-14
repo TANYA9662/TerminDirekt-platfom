@@ -153,8 +153,7 @@ const CategoryPage = () => {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full md:w-1/3 p-3 rounded-xl ring-1 ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredCompanies.length === 0 ? (
             <p className="text-gray-500">{t("home.no_companies")}</p>
           ) : (
@@ -163,7 +162,7 @@ const CategoryPage = () => {
                 key={company.id}
                 company={{
                   ...company,
-                  images: company.images, // sada koristi mapCompanyImages
+                  images: company.images,
                   displayName: company.displayName,
                 }}
                 onBook={() => {

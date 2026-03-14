@@ -49,53 +49,55 @@ const Header = () => {
   return (
     <>
       <header className="fixed top-0 left-0 w-full z-50 bg-gray-100 shadow-md">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
-          <Link to="/" className="text-2xl font-bold text-gray drop-shadow-lg">
+        <div className="max-w-8xl mx-auto px-2 py-4 flex items-center gap-2">
+
+          {/* Logo levo */}
+          <Link to="/" className="text-2xl font-bold text-gray drop-shadow-lg flex-shrink-0">
             {t("header.logo")}
           </Link>
 
-          {/* Desktop categories */}
-          <ul key={lang} className="hidden md:flex gap-1 flex-1 items-center overflow-x-auto no-scrollbar">
-            {categories.map((cat) => (
-              <li key={cat.id}>
-                <Link
-                  to={`/category/${cat.id}`}
-                  className="px-4 py-2 rounded-lg hover:bg-white/20 transition text-gray"
-                >
-                  {getCategoryName(cat)}
-                </Link>
-              </li>
+          {/* Categories centrirano */}
+          <nav className="hidden md:flex flex-1 justify-center gap-2 overflow-x-auto scrollbar-none">
+            {categories.map(cat => (
+              <Link
+                key={cat.id}
+                to={`/category/${cat.id}`}
+                className="flex-shrink-0 px-3 py-2 rounded-lg text-gray hover:bg-white/20 transition whitespace-nowrap"
+              >
+                {getCategoryName(cat)}
+              </Link>
             ))}
-          </ul>
+          </nav>
 
-          {/* Language selector desktop */}
-          <select
-            value={lang}
-            onChange={(e) => {
-              const newLang = langMap[e.target.value] || "en";
-              i18n.changeLanguage(e.target.value);
-              setLanguageHeader?.(newLang);
-            }}
-            className="hidden md:block px-2 py-1 rounded border border-gray-400"
-          >
-            <option value="en">🇬🇧 EN</option>
-            <option value="sr">🇷🇸 SR</option>
-            <option value="sv">🇸🇪 SV</option>
-          </select>
+          {/* User actions & language desno */}
+          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+            {/* Language selector */}
+            <select
+              value={lang}
+              onChange={(e) => {
+                const newLang = langMap[e.target.value] || "en";
+                i18n.changeLanguage(e.target.value);
+                setLanguageHeader?.(newLang);
+              }}
+              className="px-2 py-1 rounded border border-gray-400"
+            >
+              <option value="en">🇬🇧 EN</option>
+              <option value="sr">🇷🇸 SR</option>
+              <option value="sv">🇸🇪 SV</option>
+            </select>
 
-          {/* Desktop user actions */}
-          <div className="hidden md:flex items-center gap-2">
+            {/* Account / Logout */}
             {!user ? (
               <>
                 <Link
                   to="/register"
-                  className="px-4 py-2 rounded-lg bg-white/20 text-gray border border-gray-400 shadow-2xl font-bold hover:bg-accentLight transition"
+                  className="px-4 py-2 rounded-lg bg-white/20 border border-gray-400 font-bold hover:bg-accentLight transition"
                 >
                   {t("header.register")}
                 </Link>
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-lg bg-white/20 border border-gray-400 shadow-2xl text-gray font-bold hover:bg-white/40 transition"
+                  className="px-4 py-2 rounded-lg bg-white/20 border border-gray-400 font-bold hover:bg-white/40 transition"
                 >
                   {t("header.login")}
                 </Link>
@@ -121,13 +123,12 @@ const Header = () => {
           {/* Hamburger mobile */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 rounded-lg border border-gray-400 shadow-lg"
+            className="md:hidden p-2 rounded-lg border border-gray-400 shadow-lg ml-auto"
           >
             <div className="w-6 h-0.5 bg-gray-800 mb-1 transition-all"></div>
             <div className="w-6 h-0.5 bg-gray-800 mb-1 transition-all"></div>
             <div className="w-6 h-0.5 bg-gray-800 transition-all"></div>
           </button>
-
         </div>
       </header>
 
@@ -136,7 +137,8 @@ const Header = () => {
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 md:hidden"
           onClick={() => setMenuOpen(false)}
         />
-      )}
+      )
+      }
 
       {/* Mobile menu */}
       <aside

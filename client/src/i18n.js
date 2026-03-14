@@ -14,13 +14,83 @@ const resources = {
         logout: "Logout",
         category: "Category"
       },
-
       hero: {
         title: "Book an appointment online",
         search_placeholder: "Search companies or services...",
         all_locations: "All locations",
-        search_button: "Search"
+        search_button: "Search",
+        popular: {
+          massage: "Massage",
+          hairdresses: "Hairdresses",
+          nails: "Manicure",
+          pedicure: "Pedicure",
+          lastminut: "Last Minute"
+        }
       },
+      footer: {
+        download: "Download the app",
+        appstore: "App Store",
+        googleplay: "Google Play",
+        account: "Account",
+        login: "Login",
+        bookings: "My bookings",
+        support: "Support",
+        info: "Info",
+        about: "About us",
+        privacy: "Privacy Policy",
+        terms: "Terms of service",
+        rights: "All rights reserved"
+      },
+      terms: {
+        title: "Terms of Service",
+        intro: "Welcome to TerminDirekt. By using our platform, you agree to the following terms.",
+        sections: {
+          service_desc: "1. Service Description",
+          service_desc_text: "TerminDirekt is a platform that allows users to find local services and book appointments...",
+          user_account: "2. User Account",
+          user_account_text: "Users are responsible for providing accurate information and keeping login credentials safe.",
+          booking: "3. Bookings",
+          booking_text: "Bookings are made directly between the user and the company. TerminDirekt is not responsible for service quality.",
+          cancellation: "4. Cancellation",
+          cancellation_text: "Cancellation policies are determined individually by each company. Users should check them before booking.",
+          changes: "5. Changes to Terms",
+          changes_text: "TerminDirekt reserves the right to modify these terms at any time. The updated version will be published here."
+        }
+      },
+      support: {
+        title: "Support",
+        contact: "Contact Us",
+        form: {
+          name: "Name",
+          email: "Email",
+          message: "Your message",
+          submit: "Send Message"
+        },
+        message_sent: "Your message has been sent. We will contact you soon.",
+        faq: "Frequently Asked Questions",
+        faq_list: [
+          { q: "How to book an appointment?", a: "Select a category, find a company, and choose an available slot for booking." },
+          { q: "How to cancel a booking?", a: "In 'My Bookings' you can cancel according to the company's policy." },
+          { q: "Is TerminDirekt free to use?", a: "Yes, the platform is completely free for users." }
+        ]
+      },
+      privacy: {
+        title: "Privacy Policy",
+        intro: "TerminDirekt respects your privacy and is committed to protecting your personal data. This privacy policy explains what data we collect and how we use it.",
+        sections: [
+          { title: "1. Data We Collect", text: "We may collect basic information such as name, email, and booking details to enable platform use." },
+          { title: "2. How We Use Data", text: "Your data is used solely for managing your account, booking appointments, communicating regarding bookings, and improving service." },
+          { title: "3. Sharing Data", text: "TerminDirekt does not sell or share your personal data with third parties, except as necessary to fulfill a booking or as required by law." },
+          { title: "4. Data Security", text: "We take appropriate technical and organizational measures to protect your data from unauthorized access or misuse." },
+          { title: "5. Contact", text: "If you have questions about this policy, contact us at support@termindirekt.com." }
+        ]
+      },
+      about: {
+        title: "About TerminDirekt",
+        text: "TerminDirekt is a platform that helps users quickly and easily find and book appointments with local services such as hair salons, massages, spa centers, and more.",
+        more: "Our goal is to simplify the booking process and connect users with quality local companies."
+      },
+
       home: {
         must_login: "You must be logged in to book",
         booking_success: "Booking successfully created!",
@@ -94,26 +164,34 @@ const resources = {
         saveError: "Error saving services.",
         emptyList: "Please add at least one service."
       },
-
       dashboard: {
-        avatar_alt: "User avatar",
+        avatar_alt: "Avatar",
         edit_profile: "Edit profile",
+        total_bookings: "Total bookings",
+        completed: "Completed",
+        cancelled: "Cancelled",
+        next_appointment: "Next appointment",
+        quick_support: "Support",
+        quick_settings: "Settings",
+        quick_notifications: "Notifications",
+        quick_help: "Help",
         my_bookings: "My bookings",
-        no_bookings: "No bookings yet",
-        cancel: "Cancel",
+        name: "Name",
+        email: "Email",
+        phone: "Phone",
+        city: "City",
         save: "Save",
+        cancel: "Cancel",
+        loading: "Loading...",
+        access_denied: "Access denied",
         profile_updated: "Profile updated successfully",
-        error_profile_update: "Error updating profile",
-        avatar_updated: "Avatar updated",
+        avatar_updated: "Avatar updated successfully",
         error_avatar_upload: "Error uploading avatar",
         error_fetch_bookings: "Error fetching bookings",
-        error_booking: "Error booking service",
+        error_profile_update: "Error updating profile",
         confirm_cancel_booking: "Are you sure you want to cancel this booking?",
-        booking_success: "Booking successfully created",
         booking_cancelled: "Booking cancelled",
-        error_fetch_companies: "Error fetching companies",
-        access_denied: "Access denied",
-        loading: "Loading..."
+        cancel_booking_error: "Error cancelling booking"
       },
       companyPage: {
         welcome_message: "Welcome to the best Studio for Beauty!",
@@ -187,7 +265,77 @@ const resources = {
         title: "Zakažite termin online",
         search_placeholder: "Pretraži firme ili usluge...",
         all_locations: "Sve lokacije",
-        search_button: "Pretraži"
+        search_button: "Pretraži",
+        popular: {
+          massage: "Masaža",
+          hairdresses: "Frizeri",
+          manicure: "Manikir",
+          pedicure: "Pedikir",
+          lastminute: "Last Minute"
+        }
+      },
+      footer: {
+        download: "Preuzmite aplikaciju",
+        appstore: "App Store",
+        googleplay: "Google Play",
+        account: "Korisnički nalog",
+        login: "Prijava",
+        bookings: "Moje rezervacije",
+        support: "Podrška",
+        info: "Info",
+        about: "O nama",
+        privacy: "Politika privatnosti",
+        terms: "Uslovi korišćenja",
+        rights: " Sva prava zadržana"
+      },
+      terms: {
+        title: "Uslovi korišćenja",
+        intro: "Dobrodošli na TerminDirekt. Korišćenjem naše platforme prihvatate sledeće uslove korišćenja.",
+        sections: {
+          service_desc: "1. Opis usluge",
+          service_desc_text: "TerminDirekt je platforma koja omogućava korisnicima da pronađu lokalne usluge i rezervišu termine kod kompanija...",
+          user_account: "2. Korisnički nalog",
+          user_account_text: "Korisnici su odgovorni za tačnost informacija i čuvanje pristupnih podataka.",
+          booking: "3. Rezervacije",
+          booking_text: "Rezervacije se obavljaju direktno između korisnika i kompanije. TerminDirekt nije odgovoran za kvalitet usluge.",
+          cancellation: "4. Otkazivanje",
+          cancellation_text: "Pravila otkazivanja određuje svaka kompanija. Korisnici treba da proverе uslove pre rezervacije.",
+          changes: "5. Izmene uslova",
+          changes_text: "TerminDirekt zadržava pravo da izmeni ove uslove u bilo kom trenutku. Ažurirana verzija će biti objavljena na ovoj stranici."
+        }
+      },
+      support: {
+        title: "Podrška",
+        contact: "Kontaktirajte nas",
+        form: {
+          name: "Ime",
+          email: "Email",
+          message: "Vaša poruka",
+          submit: "Pošalji poruku"
+        },
+        message_sent: "Poruka je poslata. Kontaktiraćemo vas uskoro.",
+        faq: "Često postavljena pitanja",
+        faq_list: [
+          { q: "Kako rezervisati termin?", a: "Izaberite kategoriju, pronađite kompaniju i izaberite slobodan termin za rezervaciju." },
+          { q: "Kako otkazati rezervaciju?", a: "U sekciji 'Moje rezervacije' možete otkazati termin u skladu sa pravilima kompanije." },
+          { q: "Da li je korišćenje TerminDirekt besplatno?", a: "Da, za korisnike je korišćenje platforme potpuno besplatno." }
+        ]
+      },
+      privacy: {
+        title: "Politika privatnosti",
+        intro: "TerminDirekt poštuje vašu privatnost i posvećen je zaštiti vaših ličnih podataka. Ova politika privatnosti objašnjava koje podatke prikupljamo i kako ih koristimo.",
+        sections: [
+          { title: "1. Podaci koje prikupljamo", text: "Možemo prikupljati osnovne informacije kao što su ime, email adresa i podaci o rezervacijama kako bismo omogućili korišćenje naše platforme." },
+          { title: "2. Kako koristimo podatke", text: "Vaše podatke koristimo isključivo za upravljanje korisničkim nalogom, zakazivanje termina, komunikaciju vezanu za rezervacije i unapređenje usluge." },
+          { title: "3. Deljenje podataka", text: "TerminDirekt ne prodaje i ne deli vaše lične podatke sa trećim stranama, osim kada je to potrebno za realizaciju rezervacije ili kada to zahteva zakon." },
+          { title: "4. Bezbednost podataka", text: "Preduzimamo odgovarajuće tehničke i organizacione mere kako bismo zaštitili vaše podatke od neovlašćenog pristupa ili zloupotrebe." },
+          { title: "5. Kontakt", text: "Ako imate pitanja u vezi sa ovom politikom privatnosti, možete nas kontaktirati putem email adrese: support@termindirekt.com" }
+        ]
+      },
+      about: {
+        title: "O TerminDirekt",
+        text: "TerminDirekt je platforma koja pomaže korisnicima da brzo i jednostavno pronađu i rezervišu termine kod lokalnih usluga kao što su frizerski saloni, masaže, spa centri i druge usluge.",
+        more: "Naš cilj je da pojednostavimo proces zakazivanja i povežemo korisnike sa kvalitetnim lokalnim kompanijama."
       },
       home: {
         must_login: "Morate biti ulogovani da biste zakazali termin",
@@ -216,7 +364,6 @@ const resources = {
         cancel: "Otkaži",
         book_now: "Rezerviši"
       },
-
 
       auth: {
         register: "Registracija",
@@ -267,24 +414,33 @@ const resources = {
         emptyList: "Molimo dodajte bar jednu uslugu."
       },
       dashboard: {
-        avatar_alt: "Avatar korisnika",
+        avatar_alt: "Avatar",
         edit_profile: "Izmeni profil",
+        total_bookings: "Ukupno rezervacija",
+        completed: "Završene",
+        cancelled: "Otkazane",
+        next_appointment: "Sledeći termin",
+        quick_support: "Podrška",
+        quick_settings: "Podešavanja",
+        quick_notifications: "Obaveštenja",
+        quick_help: "Pomoć",
         my_bookings: "Moje rezervacije",
-        no_bookings: "Nema rezervacija",
-        cancel: "Otkaži",
+        name: "Ime",
+        email: "Email",
+        phone: "Telefon",
+        city: "Grad",
         save: "Sačuvaj",
-        profile_updated: "Profil uspešno sačuvan",
-        error_profile_update: "Greška pri čuvanju profila",
-        avatar_updated: "Avatar uspešno ažuriran",
-        error_avatar_upload: "Greška pri upload-u avatara",
-        error_fetch_bookings: "Greška pri učitavanju rezervacija",
-        error_booking: "Greška pri rezervaciji",
-        confirm_cancel_booking: "Da li ste sigurni da želite da otkažete rezervaciju?",
-        booking_success: "Rezervacija uspešno kreirana",
-        booking_cancelled: "Rezervacija otkazana",
-        error_fetch_companies: "Greška pri učitavanju firmi",
+        cancel: "Otkaži",
+        loading: "Učitavanje...",
         access_denied: "Pristup odbijen",
-        loading: "Učitavanje..."
+        profile_updated: "Profil je uspešno ažuriran",
+        avatar_updated: "Avatar je uspešno ažuriran",
+        error_avatar_upload: "Greška pri uploadu avatara",
+        error_fetch_bookings: "Greška pri učitavanju rezervacija",
+        error_profile_update: "Greška pri ažuriranju profila",
+        confirm_cancel_booking: "Da li ste sigurni da želite otkazati ovu rezervaciju?",
+        booking_cancelled: "Rezervacija je otkazana",
+        cancel_booking_error: "Greška pri otkazivanju rezervacije"
       },
       companyPage: {
         welcome_message: "Dobrodošli u najbolji studio za lepotu!",
@@ -358,7 +514,77 @@ const resources = {
         title: "Boka tid online",
         search_placeholder: "Sök företag eller tjänster...",
         all_locations: "Alla platser",
-        search_button: "Sök"
+        search_button: "Sök",
+        popular: {
+          massage: "Massage",
+          hairdresses: "Frisörer",
+          manicure: "Manikyr",
+          pedicure: "Pedikyr",
+          lastminute: "Sista Minuten"
+        }
+      },
+      footer: {
+        download: "Ladda ner appen",
+        appstore: "App Store",
+        googleplay: "Google Play",
+        account: "Konto",
+        login: "Logga in",
+        bookings: "Mina bokningar",
+        support: "Support",
+        info: "Info",
+        about: "Om oss",
+        privacy: "Integritetspolicy",
+        terms: "Villkor",
+        rights: "Alla rättigheter reserverade"
+      },
+      terms_sv: {
+        title: "Användarvillkor",
+        intro: "Välkommen till TerminDirekt. Genom att använda vår plattform accepterar du följande villkor.",
+        sections: {
+          service_desc: "1. Tjänstbeskrivning",
+          service_desc_text: "TerminDirekt är en plattform som gör det möjligt för användare att hitta lokala tjänster och boka tider direkt med företag som använder vårt system.",
+          user_account: "2. Användarkonto",
+          user_account_text: "Användare är ansvariga för att ange korrekt information vid registrering och för att skydda sina inloggningsuppgifter.",
+          booking: "3. Bokningar",
+          booking_text: "Bokningar görs direkt mellan användaren och företaget. TerminDirekt ansvarar inte för tjänstens kvalitet som företaget tillhandahåller.",
+          cancellation: "4. Avbokning",
+          cancellation_text: "Avbokningsregler bestäms individuellt av varje företag. Användare bör kontrollera villkoren innan bokning.",
+          changes: "5. Ändringar av villkor",
+          changes_text: "TerminDirekt förbehåller sig rätten att ändra dessa villkor när som helst. Den uppdaterade versionen publiceras på denna sida."
+        }
+      },
+      support: {
+        title: "Support",
+        contact: "Kontakta oss",
+        form: {
+          name: "Namn",
+          email: "Email",
+          message: "Ditt meddelande",
+          submit: "Skicka meddelande"
+        },
+        message_sent: "Ditt meddelande har skickats. Vi kontaktar dig snart.",
+        faq: "Vanliga frågor",
+        faq_list: [
+          { q: "Hur bokar man en tid?", a: "Välj kategori, hitta ett företag och välj en ledig tid för bokning." },
+          { q: "Hur avbokar man en bokning?", a: "I 'Mina bokningar' kan du avboka enligt företagets policy." },
+          { q: "Är TerminDirekt gratis att använda?", a: "Ja, plattformen är helt gratis för användare." }
+        ]
+      },
+      privacy: {
+        title: "Integritetspolicy",
+        intro: "TerminDirekt respekterar din integritet och är engagerad i att skydda dina personuppgifter. Denna policy förklarar vilka uppgifter vi samlar in och hur vi använder dem.",
+        sections: [
+          { title: "1. Uppgifter vi samlar in", text: "Vi kan samla in grundläggande information som namn, e-postadress och bokningsinformation för att möjliggöra användning av plattformen." },
+          { title: "2. Hur vi använder uppgifter", text: "Vi använder dina uppgifter enbart för att hantera ditt konto, boka tider, kommunicera om bokningar och förbättra tjänsten." },
+          { title: "3. Delning av uppgifter", text: "TerminDirekt säljer inte eller delar dina personuppgifter med tredje part, utom när det behövs för att genomföra en bokning eller när lagen kräver det." },
+          { title: "4. Datasäkerhet", text: "Vi vidtar lämpliga tekniska och organisatoriska åtgärder för att skydda dina uppgifter från obehörig åtkomst eller missbruk." },
+          { title: "5. Kontakt", text: "Om du har frågor om denna policy kan du kontakta oss via e-post: support@termindirekt.com" }
+        ]
+      },
+      about: {
+        title: "Om TerminDirekt",
+        text: "TerminDirekt är en plattform som hjälper användare att snabbt och enkelt hitta och boka tider hos lokala tjänster som frisörsalonger, massage, spa-center och andra tjänster.",
+        more: "Vårt mål är att förenkla bokningsprocessen och koppla användare till kvalitetsföretag lokalt."
       },
       home: {
         must_login: "Du måste vara inloggad för att boka",
@@ -433,24 +659,33 @@ const resources = {
         emptyList: "Vänligen lägg till minst en tjänst."
       },
       dashboard: {
-        avatar_alt: "Användaravatar",
+        avatar_alt: "Avatar",
         edit_profile: "Redigera profil",
+        total_bookings: "Totala bokningar",
+        completed: "Slutförda",
+        cancelled: "Avbokade",
+        next_appointment: "Nästa möte",
+        quick_support: "Support",
+        quick_settings: "Inställningar",
+        quick_notifications: "Aviseringar",
+        quick_help: "Hjälp",
         my_bookings: "Mina bokningar",
-        no_bookings: "Inga bokningar än",
-        cancel: "Avbryt",
+        name: "Namn",
+        email: "E-post",
+        phone: "Telefon",
+        city: "Stad",
         save: "Spara",
-        profile_updated: "Profil uppdaterad",
-        error_profile_update: "Fel vid uppdatering av profil",
-        avatar_updated: "Avatar uppdaterad",
+        cancel: "Avbryt",
+        loading: "Läser in...",
+        access_denied: "Åtkomst nekad",
+        profile_updated: "Profilen har uppdaterats",
+        avatar_updated: "Avatar har uppdaterats",
         error_avatar_upload: "Fel vid uppladdning av avatar",
         error_fetch_bookings: "Fel vid hämtning av bokningar",
-        error_booking: "Fel vid bokning av tjänst",
+        error_profile_update: "Fel vid uppdatering av profil",
         confirm_cancel_booking: "Är du säker på att du vill avboka denna bokning?",
-        booking_success: "Bokningen skapades",
-        booking_cancelled: "Bokningen avbokad",
-        error_fetch_companies: "Fel vid hämtning av företag",
-        access_denied: "Åtkomst nekad",
-        loading: "Läser..."
+        booking_cancelled: "Bokning avbokad",
+        cancel_booking_error: "Fel vid avbokning av bokning"
       },
       companyPage: {
         welcome_message: "Välkommen till den bästa studion för skönhet!",
