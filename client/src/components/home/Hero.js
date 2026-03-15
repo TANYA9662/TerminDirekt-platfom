@@ -7,9 +7,9 @@ const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
     "http://res.cloudinary.com/dtlzrpjgn/image/upload/v1772352587/companies/zwuj7dabyrjpeztevama.avif";
 
   return (
-    <section className="relative w-full overflow-x-hidden flex flex-col items-center justify-center bg-gray-100 pt-[20px] pb-10">
+    <section className="relative w-full overflow-x-hidden flex flex-col items-center justify-center bg-gray-100 pb-10">
       <div
-        className="w-full relative overflow-hidden -mt-15"
+        className="w-full relative overflow-hidden"
         style={{
           backgroundImage: `url('${heroBackground}')`,
           backgroundSize: "cover",
@@ -20,7 +20,7 @@ const Hero = ({ search, setSearch, city, setCity, cities, onSearch }) => {
       >
         <div className="absolute inset-0 bg-black/20" />
 
-        <div className="relative z-10 w-full max-w-5xl mx-auto px-6 sm:px-12 flex flex-col justify-end items-center text-center h-full gap-6 pb-6">
+        <div className="relative z-10 w-full max-w-5xl mx-auto px-6 sm:px-12 flex flex-col justify-end items-center text-center h-full gap-8 pb-10">
           <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg mb-4">
             {t("hero.title")}
           </h1>

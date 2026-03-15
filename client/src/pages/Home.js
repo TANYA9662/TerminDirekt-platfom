@@ -169,7 +169,7 @@ const Home = () => {
         cities={cities}
       />
 
-      <div className="max-w-8xl mx-auto px-4 -mt-4 relative z-10">
+      <div className="max-w-8xl mx-auto pb-12 px-4 mt-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredCompanies.length > 0 ? (
             filteredCompanies.map((company) => (
