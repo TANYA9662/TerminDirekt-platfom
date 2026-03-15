@@ -4,7 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import API from "../api";
 import CompanyCardCategory from "../components/home/CompanyCardCategory";
 import BookingModal from "../components/modals/BookingModal";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { mapCompanyImages } from "../utils/imageUtils";
 
@@ -122,16 +122,31 @@ const CategoryPage = () => {
     }
 
     const token = localStorage.getItem("token");
+
     try {
       await API.post(
         "/bookings",
         { companyId: selectedCompany.id, service, slotId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(t("home.booking_success"));
+
+      const slot = selectedCompany.slots?.find(s => s.id === slotId);
+      const time = slot ? new Date(slot.start_time).toLocaleString() : "";
+
+      toast.success(
+        <div>
+          <div><strong>{t("home.booking_success")}</strong></div>
+          <div>{selectedCompany.displayName}</div>
+          <div>{service}</div>
+          <div>{time}</div>
+        </div>,
+        { icon: "✅" }
+      );
+
       setBookingOpen(false);
       setSelectedCompany(null);
       fetchCompanies();
+
     } catch (err) {
       console.error("Booking error:", err);
       toast.error(t("home.booking_error"));
@@ -153,7 +168,7 @@ const CategoryPage = () => {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full md:w-1/3 p-3 rounded-xl ring-1 ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredCompanies.length === 0 ? (
             <p className="text-gray-500">{t("home.no_companies")}</p>
           ) : (
@@ -189,8 +204,6 @@ const CategoryPage = () => {
           onSubmit={handleBooking}
         />
       )}
-
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

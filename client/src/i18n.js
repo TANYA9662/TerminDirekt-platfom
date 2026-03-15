@@ -191,7 +191,8 @@ const resources = {
         error_profile_update: "Error updating profile",
         confirm_cancel_booking: "Are you sure you want to cancel this booking?",
         booking_cancelled: "Booking cancelled",
-        cancel_booking_error: "Error cancelling booking"
+        cancel_booking_error: "Error cancelling booking",
+        no_bookings: "No bookings"
       },
       companyPage: {
         welcome_message: "Welcome to the best Studio for Beauty!",
@@ -440,7 +441,8 @@ const resources = {
         error_profile_update: "Greška pri ažuriranju profila",
         confirm_cancel_booking: "Da li ste sigurni da želite otkazati ovu rezervaciju?",
         booking_cancelled: "Rezervacija je otkazana",
-        cancel_booking_error: "Greška pri otkazivanju rezervacije"
+        cancel_booking_error: "Greška pri otkazivanju rezervacije",
+        no_bookings: "Nema rezervacija"
       },
       companyPage: {
         welcome_message: "Dobrodošli u najbolji studio za lepotu!",
@@ -685,7 +687,8 @@ const resources = {
         error_profile_update: "Fel vid uppdatering av profil",
         confirm_cancel_booking: "Är du säker på att du vill avboka denna bokning?",
         booking_cancelled: "Bokning avbokad",
-        cancel_booking_error: "Fel vid avbokning av bokning"
+        cancel_booking_error: "Fel vid avbokning av bokning",
+        no_bookings: "Mina bokningar"
       },
       companyPage: {
         welcome_message: "Välkommen till den bästa studion för skönhet!",

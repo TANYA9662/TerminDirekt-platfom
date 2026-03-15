@@ -4,8 +4,7 @@ import API from "../api";
 import { AuthContext } from "../context/AuthContext";
 import BookingModal from "../components/modals/BookingModal";
 import ServiceList from "../components/company/ServiceList";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import { absoluteUrl } from "../utils/imageUtils";
 import { useTranslation } from "react-i18next";
 
@@ -54,16 +53,36 @@ const CompanyPage = () => {
   }, [fetchCompany, fetchReviews]);
 
   const handleBooking = async ({ service, slotId }) => {
+    if (!company) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error(t("home.must_login"));
+      return;
+    }
+
     try {
-      const token = localStorage.getItem("token");
       await API.post(
         "/bookings",
         { companyId: company.id, service, slotId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      const slot = company.slots?.find((s) => s.id === slotId);
+      const time = slot ? new Date(slot.start_time).toLocaleString() : "";
+
+      toast.success(
+        <div>
+          <div><strong>{t("companyPage.booking_success")}</strong></div>
+          <div>{company.name}</div>
+          <div>{service}</div>
+          <div>{time}</div>
+        </div>,
+        { icon: "✅" }
+      );
+
       setBookedSlotId(slotId);
       setBookingOpen(false);
-      toast.success(t("companyPage.booking_success"));
     } catch (err) {
       console.error(err);
       toast.error(t("companyPage.booking_error"));
@@ -205,9 +224,6 @@ const CompanyPage = () => {
           bookedSlotId={bookedSlotId}
         />
       )}
-
-      {/* TOAST */}
-      <ToastContainer position="top-right" autoClose={3000} newestOnTop pauseOnHover />
     </div>
   );
 };

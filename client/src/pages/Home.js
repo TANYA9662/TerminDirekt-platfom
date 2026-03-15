@@ -1,13 +1,11 @@
 import React, { useEffect, useState, useContext } from "react";
 import API from "../api";
 import Hero from "../components/home/Hero";
-import Footer from "../components/common/Footer";
 import CompanyCard from "../components/home/CompanyCard";
 import BookingModal from "../components/modals/BookingModal";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { mapCompanyImages } from '../utils/imageUtils';
 
@@ -115,13 +113,15 @@ const Home = () => {
   });
 
   const handleBooking = async ({ service, slotId }) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error(t("home.must_login"));
-        return;
-      }
+    if (!selectedCompany) return;
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error(t("home.must_login"));
+      return;
+    }
+
+    try {
       await API.post(
         "/bookings",
         {
@@ -132,7 +132,19 @@ const Home = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      toast.success(t("home.booking_success"));
+      const slot = selectedCompany.slots?.find((s) => s.id === slotId);
+      const time = slot ? new Date(slot.start_time).toLocaleString() : "";
+
+      toast.success(
+        <div>
+          <div><strong>{t("home.booking_success")}</strong></div>
+          <div>{selectedCompany.displayName}</div>
+          <div>{service}</div>
+          <div>{time}</div>
+        </div>,
+        { icon: "✅" }
+      );
+
       setSelectedCompany(null);
     } catch (err) {
       console.error(err);
@@ -158,7 +170,7 @@ const Home = () => {
       />
 
       <div className="max-w-8xl mx-auto px-4 -mt-4 relative z-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredCompanies.length > 0 ? (
             filteredCompanies.map((company) => (
               <CompanyCard
@@ -211,17 +223,6 @@ const Home = () => {
           </div>
         </div>
       )}
-
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
     </div>
 
   );

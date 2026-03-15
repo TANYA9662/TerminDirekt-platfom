@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import useAuth from "../hooks/useAuth";
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import API from "../api";
 import { useTranslation } from "react-i18next";
 
@@ -16,6 +15,7 @@ const absoluteUrl = (path) => {
 const Dashboard = () => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+
 
   const { user, setUser, loading, isCompany } = useAuth();
   const [bookings, setBookings] = useState([]);
@@ -153,7 +153,11 @@ const Dashboard = () => {
           <div className="bg-white rounded-2xl shadow p-4 text-center">
             <p className="text-sm text-gray-500">{t("dashboard.next_appointment")}</p>
             <p className="text-xl font-bold">
-              {nextBooking ? new Date(nextBooking.start_time).toLocaleDateString() : "-"}
+              {nextBooking
+                ? new Date(nextBooking.start_time).toLocaleDateString(lang, {
+                  dateStyle: "medium",
+                })
+                : "-"}
             </p>
           </div>
         </div>
@@ -189,7 +193,10 @@ const Dashboard = () => {
                 <div key={b.id} className="bg-gray-50 p-4 rounded-2xl shadow-sm flex justify-between items-center">
                   <div>
                     <p className="font-medium">{b.company_name}</p>
-                    <p className="text-gray-600 text-sm">{b.service} – {new Date(b.start_time).toLocaleString()}</p>
+                    <p className="text-gray-600 text-sm">{b.service} – {new Date(b.start_time).toLocaleString(lang, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}</p>
                   </div>
                   <button
                     onClick={() => handleCancelBooking(b.id)}

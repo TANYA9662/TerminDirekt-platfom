@@ -4,7 +4,6 @@ import { CompanyContext } from "../context/CompanyContext";
 import CompanyImageUpload from "../components/company/CompanyImageUpload";
 import { buildImageUrl } from "../utils/imageUtils";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import API from "../api";
 import { useTranslation } from "react-i18next";
 
