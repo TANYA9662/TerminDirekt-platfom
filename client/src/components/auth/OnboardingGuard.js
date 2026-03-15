@@ -13,18 +13,34 @@ export default function OnboardingGuard() {
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== "company") return <Navigate to="/" replace />;
 
-  if (status === "loading") return <div className="p-6 text-center">Učitavanje firme...</div>;
+  // čekaj da se firma učita
+  if (status !== "ready") {
+    return <div className="p-6 text-center">Učitavanje firme...</div>;
+  }
 
-  // if company complete → go to dashboard
-  if (companyComplete) return <Navigate to="/company-dashboard" replace />;
+  // onboarding završen
+  if (companyComplete) {
+    if (location.pathname !== "/company-dashboard") {
+      return <Navigate to="/company-dashboard" replace />;
+    }
+    return <Outlet />;
+  }
 
-  // go to next onboarding step
+  // odredi sledeći korak
   let nextStep = "/onboarding/company";
-  if (company?.name && company?.description && !company.images?.length) nextStep = "/onboarding/images";
-  else if (company?.name && company?.description && company.images?.length && !company.services?.length)
-    nextStep = "/onboarding/services";
 
-  if (location.pathname !== nextStep) return <Navigate to={nextStep} replace />;
+  if (company?.name && company?.description) {
+    if (!company?.images?.length) {
+      nextStep = "/onboarding/images";
+    } else if (!company?.services?.length) {
+      nextStep = "/onboarding/services";
+    }
+  }
+
+  // redirect samo ako nisi već tamo
+  if (location.pathname !== nextStep) {
+    return <Navigate to={nextStep} replace />;
+  }
 
   return <Outlet />;
 }

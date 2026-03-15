@@ -8,10 +8,10 @@ import { useTranslation } from "react-i18next";
 
 export default function ServicesStep() {
   const { t } = useTranslation();
-  const { company, updateCompanyServices, setCompany } = useContext(CompanyContext);
+  const { company, updateCompanyServices } = useContext(CompanyContext);
   const navigate = useNavigate();
 
-  const [services, setServices] = useState(() =>
+  const [services, setServices] = useState(
     Array.isArray(company?.services) ? [...company.services] : []
   );
   const [categories, setCategories] = useState([]);
@@ -20,7 +20,7 @@ export default function ServicesStep() {
   const [newServiceCategory, setNewServiceCategory] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ---- Load categories ----
+  /* ================= LOAD CATEGORIES ================= */
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -31,10 +31,11 @@ export default function ServicesStep() {
         setCategories([]);
       }
     };
+
     fetchCategories();
   }, []);
 
-  // ---- Add new service ----
+  /* ================= ADD SERVICE ================= */
   const handleAddService = () => {
     if (!newServiceName.trim() || !newServiceCategory) {
       toast.error(t("onboarding.enterNameCategory"));
@@ -42,31 +43,36 @@ export default function ServicesStep() {
     }
 
     const price = newServicePrice ? Number(newServicePrice) : 0;
-    const tempId = `temp-${Date.now()}`;
 
-    const newSrv = { tempId, name: newServiceName.trim(), price, category_id: Number(newServiceCategory) };
-    setServices(prev => [...prev, newSrv]);
+    const newService = {
+      tempId: `temp-${Date.now()}`,
+      name: newServiceName.trim(),
+      price,
+      category_id: Number(newServiceCategory),
+    };
+
+    setServices((prev) => [...prev, newService]);
 
     setNewServiceName("");
     setNewServicePrice("");
     setNewServiceCategory("");
   };
 
-  // ---- Edit service ----
+  /* ================= EDIT SERVICE ================= */
   const handleChangeService = (idx, field, value) => {
-    setServices(prev => {
+    setServices((prev) => {
       const updated = [...prev];
       updated[idx][field] = field === "price" ? Number(value) : value;
       return updated;
     });
   };
 
-  // ---- Remove service ----
+  /* ================= REMOVE SERVICE ================= */
   const handleRemoveService = (idx) => {
-    setServices(prev => prev.filter((_, i) => i !== idx));
+    setServices((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // ---- Save services and navigate ----
+  /* ================= SAVE & FINISH ================= */
   const handleNext = async () => {
     if (!services.length) {
       toast.error(t("onboarding.emptyList"));
@@ -75,28 +81,23 @@ export default function ServicesStep() {
 
     setLoading(true);
 
-    // 1️⃣ Update context locally odmah, da ekran ne nestane
-    setCompany(prev => ({ ...prev, services }));
-
     try {
-      const payload = services.map(s => ({
+      const payload = services.map((s) => ({
         ...(s.id ? { id: s.id } : {}),
         name: s.name,
         price: Number(s.price),
         category_id: Number(s.category_id),
       }));
 
-      // 2️⃣ Pošalji podatke na API
       const updatedServices = await updateCompanyServices(payload);
 
-      // 3️⃣ Ako API vrati servis, update context sa odgovorom
       if (Array.isArray(updatedServices) && updatedServices.length > 0) {
-        setCompany(prev => ({ ...prev, services: updatedServices }));
+        navigate("/company-dashboard");
+      } else {
+        toast.error(t("onboarding.saveError"));
       }
-
-      navigate("/company-dashboard");
     } catch (err) {
-      console.error("Error saving services:", err);
+      console.error(err);
       toast.error(t("onboarding.saveError"));
     } finally {
       setLoading(false);
@@ -111,7 +112,9 @@ export default function ServicesStep() {
     <div className="min-h-screen bg-gray-200 py-10">
       <div className="max-w-7xl mx-auto px-6">
         <div className="bg-white p-6 rounded-3xl shadow-md space-y-6">
-          <h3 className="text-2xl font-semibold text-gray-800">{t("onboarding.addServices")}</h3>
+          <h3 className="text-2xl font-semibold text-gray-800">
+            {t("onboarding.addServices")}
+          </h3>
 
           <ul className="space-y-2">
             {services.map((srv, idx) => (
@@ -122,12 +125,14 @@ export default function ServicesStep() {
                   onChange={(e) => handleChangeService(idx, "name", e.target.value)}
                   className="border bg-gray-100 px-3 py-2 rounded-xl flex-1 focus:outline-none focus:ring-2 focus:ring-red-600"
                 />
+
                 <input
                   type="number"
                   value={srv.price}
                   onChange={(e) => handleChangeService(idx, "price", e.target.value)}
                   className="border bg-gray-100 px-3 py-2 rounded-xl w-36 focus:outline-none focus:ring-2 focus:ring-red-600"
                 />
+
                 <button
                   onClick={() => handleRemoveService(idx)}
                   className="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition"
@@ -146,6 +151,7 @@ export default function ServicesStep() {
               onChange={(e) => setNewServiceName(e.target.value)}
               className="border bg-gray-100 px-3 py-2 rounded-xl flex-1 focus:outline-none focus:ring-2 focus:ring-red-600"
             />
+
             <input
               type="number"
               placeholder={t("onboarding.servicePrice")}
@@ -153,20 +159,28 @@ export default function ServicesStep() {
               onChange={(e) => setNewServicePrice(e.target.value)}
               className="border bg-gray-100 px-3 py-2 rounded-xl w-36 focus:outline-none focus:ring-2 focus:ring-red-600"
             />
+
             <select
               value={newServiceCategory}
               onChange={(e) => setNewServiceCategory(e.target.value)}
               className="border bg-gray-100 px-3 py-2 rounded-xl w-48 focus:outline-none focus:ring-2 focus:ring-red-600"
             >
               <option value="">{t("onboarding.chooseCategory")}</option>
+
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
               ))}
             </select>
+
             <button
               onClick={handleAddService}
               disabled={loading}
-              className={`px-4 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
+              className={`px-4 py-2 rounded-xl text-white ${loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700 transition"
+                }`}
             >
               {t("onboarding.add")}
             </button>
@@ -176,20 +190,28 @@ export default function ServicesStep() {
             <button
               onClick={handleBack}
               disabled={loading}
-              className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-gray-600 hover:bg-gray-700 transition"}`}
+              className={`px-6 py-2 rounded-xl text-white ${loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gray-600 hover:bg-gray-700 transition"
+                }`}
             >
               {t("onboarding.back")}
             </button>
+
             <button
               onClick={handleNext}
               disabled={loading}
-              className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
+              className={`px-6 py-2 rounded-xl text-white ${loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700 transition"
+                }`}
             >
               {loading ? t("onboarding.saving") : t("onboarding.finish")}
             </button>
           </div>
         </div>
       </div>
+
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );
