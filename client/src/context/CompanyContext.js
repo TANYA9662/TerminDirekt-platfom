@@ -22,7 +22,7 @@ const isCompanyComplete = (company) =>
     company.description?.trim() &&
     Array.isArray(company.images) &&
     company.images.length > 0 &&
-    Array.isArray(company.services) &&
+    Array.isArray(company?.services) &&
     company.services.length > 0
   );
 
@@ -85,7 +85,7 @@ export const CompanyProvider = ({ children }) => {
       const res = await API.put(`/companies/${id}`, payload);
       const data = res.data?.company ?? {};
 
-      setCompany(prev => {
+      setCompany((prev) => {
         const updated = { ...prev, ...data };
         setCompanyComplete(isCompanyComplete(updated));
         return updated;
@@ -97,7 +97,6 @@ export const CompanyProvider = ({ children }) => {
       throw err;
     }
   };
-
   /* ================= SET COMPANY IMAGES ================= */
   const setCompanyImages = (images) => {
     setCompany(prev => {
@@ -106,24 +105,24 @@ export const CompanyProvider = ({ children }) => {
       return updated;
     });
   };
-
-  /* ================= SERVICES ================= */
+  /* ================= UPDATE SERVICES ================= */
   const updateCompanyServices = async (services) => {
     if (!company.id) throw new Error("Company ID nije definisan");
 
     try {
       const res = await API.put(`/companies/${company.id}/services`, { services });
-      const updatedServices = res.data.services || [];
+      const updatedServices = Array.isArray(res.data?.services) ? res.data.services : [];
 
-      setCompany(prev => {
+      // odmah update UI
+      setCompany((prev) => {
         const updated = { ...prev, services: updatedServices };
-        setCompanyComplete(isCompanyComplete(updated)); // ⬅️ automatski update complete
+        setCompanyComplete(isCompanyComplete(updated));
         return updated;
       });
 
       return updatedServices;
     } catch (err) {
-      console.error("Greška pri update servisa:", err);
+      console.error("Greška pri update servisa:", err?.response?.data || err.message);
       throw err;
     }
   };
@@ -165,6 +164,7 @@ export const CompanyProvider = ({ children }) => {
         company,
         status,
         companyComplete,
+        setCompanyComplete,
         fetchCompany,
         updateCompany,
         updateCompanyServices,

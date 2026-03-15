@@ -13,12 +13,11 @@ export default function OnboardingGuard() {
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== "company") return <Navigate to="/" replace />;
 
-  // čekaj da se firma učita
-  if (status !== "ready") {
+  if (status === "loading") {
     return <div className="p-6 text-center">Učitavanje firme...</div>;
   }
 
-  // onboarding završen
+  // Ako je onboarding kompletan
   if (companyComplete) {
     if (location.pathname !== "/company-dashboard") {
       return <Navigate to="/company-dashboard" replace />;
@@ -26,7 +25,7 @@ export default function OnboardingGuard() {
     return <Outlet />;
   }
 
-  // odredi sledeći korak
+  // Odredi sledeći korak onboarding-a
   let nextStep = "/onboarding/company";
 
   if (company?.name && company?.description) {
@@ -37,7 +36,7 @@ export default function OnboardingGuard() {
     }
   }
 
-  // redirect samo ako nisi već tamo
+  // Redirect samo ako trenutno nismo na sledećem koraku
   if (location.pathname !== nextStep) {
     return <Navigate to={nextStep} replace />;
   }

@@ -3,7 +3,8 @@ import API from "../../api";
 import { toast } from "react-toastify";
 import { buildImageUrl } from "../../utils/imageUtils";
 
-const CompanyImageUpload = ({ companyId, existingImages = [], onDeleteImage, onUploadSuccess }) => {
+
+const CompanyImageUpload = ({ companyId, existingImages = [], onDeleteImage, onUploadSuccess, square = false }) => {
   const [uploading, setUploading] = useState(false);
   const [images, setImages] = useState(existingImages);
 
@@ -20,11 +21,13 @@ const CompanyImageUpload = ({ companyId, existingImages = [], onDeleteImage, onU
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      const newImages = res.data.map(img => ({ ...img, url: buildImageUrl(img) }));
+      const newImages = res.data.map(img => ({
+        ...img,
+        url: buildImageUrl(img, square ? 1200 : 400) // veće samo ako square=true
+      }));
 
       setImages(prev => [...prev, ...newImages]);
       onUploadSuccess && onUploadSuccess(newImages);
-
       toast.success("Slike uspešno dodate");
     } catch (err) {
       console.error("Greška pri upload-u slika:", err);
@@ -44,17 +47,17 @@ const CompanyImageUpload = ({ companyId, existingImages = [], onDeleteImage, onU
         disabled={uploading}
         className="mb-4"
       />
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className={`grid gap-6 ${square ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3" : "grid-cols-2 md:grid-cols-4 lg:grid-cols-6"}`}>
         {images.map(img => (
-          <div key={img.id} className="relative">
+          <div key={img.id} className="relative w-full overflow-hidden rounded-lg shadow-lg">
             <img
-              src={buildImageUrl(img)}
+              src={img.url}
               alt="Company"
-              className="rounded-lg w-full h-32 object-cover"
+              className={`${square ? "w-full aspect-square" : "h-32 w-full"} object-cover transition-transform duration-500 hover:scale-110`}
             />
             <button
               onClick={() => onDeleteImage(img.id)}
-              className="absolute top-1 right-1 bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition"
+              className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition"
             >
               Obriši
             </button>

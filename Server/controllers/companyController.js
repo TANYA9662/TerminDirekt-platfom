@@ -14,7 +14,14 @@ export const uploadCompanyImages = async (req, res) => {
     for (const file of req.files) {
       const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: "companies" },
+          {
+            folder: "companies",
+            quality: "auto:good",
+            fetch_format: "auto",
+            transformation: [
+              { width: 1200, height: 1200, crop: "limit" }
+            ]
+          },
           (err, r) => (err ? reject(err) : resolve(r))
         );
         stream.end(file.buffer);
@@ -403,55 +410,65 @@ export const updateCompanyServices = async (req, res) => {
   try {
     const savedServices = [];
 
-    // 1️⃣ Insert ili update za svaki servis
     for (const s of services) {
-      if (!s.id && s.tempId) {
-        // novi servis
+
+      // NOVI SERVIS
+      if (!s.id) {
         const result = await pool.query(
-          `INSERT INTO services (company_id, name, price, duration, category_id, temp_id)
-           VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-          [companyId, s.name, s.price, s.duration ?? 60, s.category_id, s.tempId]
+          `INSERT INTO services (company_id, name, price, duration, category_id)
+           VALUES ($1,$2,$3,$4,$5)
+           RETURNING *`,
+          [
+            companyId,
+            s.name,
+            s.price ?? 0,
+            s.duration ?? 60,
+            s.category_id ?? null
+          ]
         );
-        savedServices.push({ ...result.rows[0], tempId: s.tempId });
-      } else if (s.id) {
-        // update postojećeg
-        const fields = [];
-        const values = [];
-        let i = 1;
 
-        for (const key of ['name', 'price', 'duration', 'category_id']) {
-          if (s[key] !== undefined) {
-            fields.push(`${key}=$${i++}`);
-            values.push(s[key]);
-          }
-        }
-        if (!fields.length) continue;
+        savedServices.push(result.rows[0]);
+      }
 
-        values.push(s.id);
+      // UPDATE POSTOJEĆEG
+      else {
         const r = await pool.query(
-          `UPDATE services SET ${fields.join(', ')} WHERE id=$${i} RETURNING *`,
-          values
+          `UPDATE services
+           SET name=$1, price=$2, duration=$3, category_id=$4
+           WHERE id=$5 AND company_id=$6
+           RETURNING *`,
+          [
+            s.name,
+            s.price ?? 0,
+            s.duration ?? 60,
+            s.category_id ?? null,
+            s.id,
+            companyId
+          ]
         );
+
         if (r.rows.length) savedServices.push(r.rows[0]);
       }
     }
 
-    // 2️⃣ Dohvati sve servise kompanije da ne nestanu ostali
     const allServicesRes = await pool.query(
       `SELECT * FROM services WHERE company_id=$1`,
       [companyId]
     );
 
-    // 3️⃣ Ažuriraj kolonu services u companies
     await pool.query(
       `UPDATE companies SET services=$1 WHERE id=$2`,
       [JSON.stringify(allServicesRes.rows), companyId]
     );
 
     res.json({ services: allServicesRes.rows });
+
   } catch (err) {
     console.error("updateCompanyServices error:", err);
-    res.status(500).json({ message: "Greška pri update-u servisa", error: err.message });
+    res.status(500).json({
+      message: "Greška pri update-u servisa",
+      error: err.message
+    });
   }
 };
 

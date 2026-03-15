@@ -29,11 +29,15 @@ router.post("/company/:id", upload.array("images", 10), async (req, res) => {
       // Upload slike na Cloudinary
       const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: "companies" },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
+          {
+            folder: "companies",
+            quality: "auto:good",
+            fetch_format: "auto",
+            transformation: [
+              { width: 1200, height: 1200, crop: "limit" }
+            ]
+          },
+          (err, r) => (err ? reject(err) : resolve(r))
         );
         stream.end(file.buffer);
       });

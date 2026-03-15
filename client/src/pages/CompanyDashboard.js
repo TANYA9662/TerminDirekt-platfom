@@ -49,7 +49,6 @@ const CompanyDashboard = () => {
     setSlots(Array.isArray(company.slots) ? company.slots : []);
     setLoading(false);
 
-    // sve zavisnosti navedene, warning nestaje
   }, [company.id, company.name, company.description, company.services, company.slots, lang]);
 
   useEffect(() => {
@@ -246,13 +245,14 @@ const CompanyDashboard = () => {
             <textarea value={tempDescription} onChange={e => setTempDescription(e.target.value)} placeholder="Opis firme" className="w-full border p-2 rounded-lg mt-2" />
           </div>
 
-          <div className="bg-white p-6 rounded-3xl shadow-md hover:shadow-lg transition">
+          <div className="bg-white p-8 rounded-3xl shadow-md hover:shadow-lg transition">
             <h2 className="text-xl font-semibold">Slike</h2>
             <CompanyImageUpload
               companyId={company.id}
               existingImages={(company.images || []).map(img => ({ ...img, url: buildImageUrl(img) }))}
               onDeleteImage={handleDeleteImage}
               onUploadSuccess={(newImages) => setCompany(prev => ({ ...prev, images: [...(prev.images || []), ...newImages] }))}
+              square={true}
             />
           </div>
         </div>
