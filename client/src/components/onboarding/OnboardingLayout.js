@@ -10,32 +10,39 @@ export default function OnboardingLayout() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { company, status, companyComplete } = useContext(CompanyContext);
+  const { company, status } = useContext(CompanyContext);
 
-  // Lock onboarding if company is finished
+  // Automatska navigacija ako je onboarding završen
   useEffect(() => {
-    if (status !== "ready") return;
-    if (companyComplete && location.pathname.startsWith("/onboarding")) {
+    if (status !== "ready" || !company) return;
+
+    const isComplete =
+      company?.name?.trim() &&
+      company?.description?.trim() &&
+      Array.isArray(company.images) && company.images.length > 0 &&
+      Array.isArray(company.services) && company.services.length > 0;
+
+    if (isComplete && location.pathname.startsWith("/onboarding")) {
       navigate("/company-dashboard", { replace: true });
     }
-  }, [companyComplete, status, location.pathname, navigate]);
+  }, [company, status, location.pathname, navigate]);
 
   // Loading state
   if (status === "loading" || !company) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gray-200">
+      <div className="min-h-screen flex items-center justify-center text-gray-800 bg-gray-200">
         {t("onboarding.loading")}
       </div>
     );
   }
 
-  // Fallback values from company
+  // Fallback vrednosti
   const nameSafe = company?.name ?? "";
   const descriptionSafe = company?.description ?? "";
   const imagesSafe = Array.isArray(company?.images) ? company.images : [];
   const servicesSafe = Array.isArray(company?.services) ? company.services : [];
 
-  // Determine current onboarding step
+  // Odredi trenutni onboarding step
   let currentStepIndex = 0;
   if (!nameSafe.trim() || !descriptionSafe.trim()) currentStepIndex = 0;
   else if (imagesSafe.length === 0) currentStepIndex = 1;

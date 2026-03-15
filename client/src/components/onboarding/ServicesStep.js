@@ -11,7 +11,9 @@ export default function ServicesStep() {
   const { company, updateCompanyServices, setCompany } = useContext(CompanyContext);
   const navigate = useNavigate();
 
-  const [services, setServices] = useState(() => Array.isArray(company?.services) ? [...company.services] : []);
+  const [services, setServices] = useState(() =>
+    Array.isArray(company?.services) ? [...company.services] : []
+  );
   const [categories, setCategories] = useState([]);
   const [newServiceName, setNewServiceName] = useState("");
   const [newServicePrice, setNewServicePrice] = useState("");
@@ -42,7 +44,10 @@ export default function ServicesStep() {
     const price = newServicePrice ? Number(newServicePrice) : 0;
     const tempId = `temp-${Date.now()}`;
 
-    setServices([...services, { tempId, name: newServiceName.trim(), price, category_id: Number(newServiceCategory) }]);
+    setServices([
+      ...services,
+      { tempId, name: newServiceName.trim(), price, category_id: Number(newServiceCategory) },
+    ]);
     setNewServiceName("");
     setNewServicePrice("");
     setNewServiceCategory("");
@@ -60,14 +65,6 @@ export default function ServicesStep() {
     setServices(services.filter((_, i) => i !== idx));
   };
 
-  // ---- Odredi sledeći onboarding step ----
-  const getNextStep = () => {
-    if (!company?.name?.trim() || !company?.description?.trim()) return "company";
-    if (!Array.isArray(company.images) || company.images.length === 0) return "images";
-    if (!Array.isArray(services) || services.length === 0) return "services";
-    return null;
-  };
-
   // ---- Save services and navigate ----
   const handleNext = async () => {
     if (!services.length) {
@@ -78,7 +75,7 @@ export default function ServicesStep() {
     setLoading(true);
 
     try {
-      const payload = services.map(s => ({
+      const payload = services.map((s) => ({
         ...(s.id ? { id: s.id } : {}),
         name: s.name,
         price: Number(s.price),
@@ -86,10 +83,9 @@ export default function ServicesStep() {
       }));
 
       const updatedServices = await updateCompanyServices(payload);
-      setCompany(prev => ({ ...prev, services: updatedServices }));
+      setCompany((prev) => ({ ...prev, services: updatedServices }));
 
-      const nextStep = getNextStep();
-      if (nextStep) navigate(`/onboarding/${nextStep}`);
+      navigate("/company-dashboard");
     } catch (err) {
       console.error("Greška pri čuvanju servisa:", err);
       toast.error(t("onboarding.saveError"));
@@ -99,8 +95,7 @@ export default function ServicesStep() {
   };
 
   const handleBack = () => {
-    if (!company?.images || company.images.length === 0) navigate("/onboarding/images");
-    else navigate("/onboarding/images"); // prethodni logički step
+    navigate("/onboarding/images"); // prethodni logički step
   };
 
   return (
@@ -156,13 +151,16 @@ export default function ServicesStep() {
             >
               <option value="">{t("onboarding.chooseCategory")}</option>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
               ))}
             </select>
             <button
               onClick={handleAddService}
               disabled={loading}
-              className={`px-4 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
+              className={`px-4 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"
+                }`}
             >
               {t("onboarding.add")}
             </button>
@@ -172,14 +170,16 @@ export default function ServicesStep() {
             <button
               onClick={handleBack}
               disabled={loading}
-              className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-gray-600 hover:bg-gray-700 transition"}`}
+              className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-gray-600 hover:bg-gray-700 transition"
+                }`}
             >
               {t("onboarding.back")}
             </button>
             <button
               onClick={handleNext}
               disabled={loading}
-              className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"}`}
+              className={`px-6 py-2 rounded-xl text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"
+                }`}
             >
               {loading ? t("onboarding.saving") : t("onboarding.finish")}
             </button>

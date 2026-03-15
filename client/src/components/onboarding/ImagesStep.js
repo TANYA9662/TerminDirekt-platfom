@@ -40,30 +40,20 @@ export default function ImagesStep() {
     }
   };
 
-  const getNextStep = () => {
-    if (!company?.name?.trim() || !company?.description?.trim()) return "company";
-    if (!Array.isArray(company.images) || company.images.length === 0) return "images";
-    if (!Array.isArray(company.services) || company.services.length === 0) return "services";
-    return null;
-  };
-
   const handleNext = async () => {
     if (!localFiles.length && !uploadedImages.length) {
       return toast.error(t("onboarding.add_at_least_one_image"));
     }
 
     setLoading(true);
-
     try {
       if (localFiles.length > 0) {
         const formData = new FormData();
         localFiles.forEach(img => formData.append("images", img.file));
 
-        const res = await API.post(
-          `/companies/${company.id}/images`,
-          formData,
-          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-        );
+        const res = await API.post(`/companies/${company.id}/images`, formData, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
 
         setUploadedImages(res.data.images);
         setCompany(prev => ({ ...prev, images: res.data.images }));
@@ -71,8 +61,8 @@ export default function ImagesStep() {
         toast.success(t("onboarding.images_saved"));
       }
 
-      const nextStep = getNextStep();
-      if (nextStep) navigate(`/onboarding/${nextStep}`);
+      // Direktno vodi na services step
+      navigate("/onboarding/services");
     } catch (err) {
       console.error("Upload error:", err);
       toast.error(err.response?.data?.message || err.message || t("onboarding.error_saving_images"));

@@ -10,18 +10,25 @@ export default function CompanyStep() {
   const { company, updateCompany } = useContext(CompanyContext);
   const navigate = useNavigate();
 
-  // Početne vrednosti iz context-a, tako da se čuvaju pri refreshu
+  // Lokalni state za inpute
   const [name, setName] = useState(company?.name || "");
   const [description, setDescription] = useState(company?.description || "");
   const [city, setCity] = useState(company?.city || "");
   const [loading, setLoading] = useState(false);
 
-  // Ako se company u context-u promeni (npr. fetch), ažuriramo lokalni state
+  // Ako se company promeni u context-u, update-ujemo lokalni state
   useEffect(() => {
     setName(company?.name || "");
     setDescription(company?.description || "");
     setCity(company?.city || "");
   }, [company]);
+
+  // Navigacija kada se context update-uje
+  useEffect(() => {
+    if (company?.name && company?.city && company?.description) {
+      navigate("/onboarding/images");
+    }
+  }, [company, navigate]);
 
   const handleNext = async () => {
     if (!name.trim() || !city.trim() || !description.trim()) {
@@ -32,8 +39,8 @@ export default function CompanyStep() {
     setLoading(true);
 
     try {
+      // updateCompany je async, navigate ide preko useEffect
       await updateCompany({ name, city, description });
-      navigate("/onboarding/images"); // sledeći onboarding step
     } catch (err) {
       console.error("CompanyStep handleNext error:", err);
       toast.error(t("onboarding.error_save"));
@@ -43,8 +50,8 @@ export default function CompanyStep() {
   };
 
   return (
-    <div className="bg-white p-6 md:p-14 rounded-3xl shadow-md w-full max-w-2xl mx-auto">
-      <div className="bg-white p-8 rounded-3xl shadow-md w-full max-w-md space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="bg-white p-6 md:p-14 rounded-3xl shadow-md w-full max-w-2xl flex flex-col gap-8">
         <h3 className="text-2xl font-semibold text-gray-800">{t("onboarding.company_info")}</h3>
 
         <input
@@ -78,8 +85,7 @@ export default function CompanyStep() {
           <button
             onClick={handleNext}
             disabled={loading}
-            className={`px-6 py-3 rounded-xl text-white font-semibold ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 transition"
-              }`}
+            className={`px-6 py-3 rounded-xl text-white font-semibold transition ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"}`}
           >
             {loading ? t("onboarding.saving") : t("onboarding.next")}
           </button>
