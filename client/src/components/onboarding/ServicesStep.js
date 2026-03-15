@@ -75,6 +75,9 @@ export default function ServicesStep() {
 
     setLoading(true);
 
+    // 1️⃣ Update context locally odmah, da ekran ne nestane
+    setCompany(prev => ({ ...prev, services }));
+
     try {
       const payload = services.map(s => ({
         ...(s.id ? { id: s.id } : {}),
@@ -83,13 +86,14 @@ export default function ServicesStep() {
         category_id: Number(s.category_id),
       }));
 
-      // 🔹 Immediately update context so UI stays consistent
-      setCompany(prev => ({ ...prev, services: payload }));
+      // 2️⃣ Pošalji podatke na API
+      const updatedServices = await updateCompanyServices(payload);
 
-      // 🔹 Call API but don’t overwrite context with API response
-      await updateCompanyServices(payload);
+      // 3️⃣ Ako API vrati servis, update context sa odgovorom
+      if (Array.isArray(updatedServices) && updatedServices.length > 0) {
+        setCompany(prev => ({ ...prev, services: updatedServices }));
+      }
 
-      // 🔹 Navigate to dashboard
       navigate("/company-dashboard");
     } catch (err) {
       console.error("Error saving services:", err);
